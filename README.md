@@ -1,7 +1,9 @@
-# RuZip — Modern ZIP Arşivleyici
+# RuZip — Türkiye'nin ZIP Arşiv Programı
 
-WinRAR tarzı, Tauri v2 + React + TypeScript + Rust ile geliştirilmiş masaüstü ZIP arşivleyici.  
+Tauri v2 + React + TypeScript + Rust ile geliştirilmiş, yerli ve açık kaynaklı masaüstü ZIP arşivleyici.  
 Catppuccin Mocha dark tema, Türkçe arayüz.
+
+**Sürüm:** `0.1.0` — © 2026
 
 ---
 
@@ -15,13 +17,20 @@ ruzip/
 │   │   ├── FileList.tsx          # Dosya listesi tablosu (sıralama, checkbox, drag-drop)
 │   │   ├── Toolbar.tsx           # Üst toolbar butonları
 │   │   ├── Dialog.tsx            # Custom modal dialog bileşeni
+│   │   ├── AboutModal.tsx        # Hakkında penceresi (sekmeli)
 │   │   └── StatusBar.tsx         # Alt durum çubuğu
 │   └── styles/
 │       └── global.css            # Catppuccin tema, tüm CSS
 ├── src-tauri/
 │   ├── src/
 │   │   ├── lib.rs                # Tauri builder, plugin kayıtları, invoke handler listesi
-│   │   └── commands.rs           # Tüm Rust backend komutları
+│   │   └── commands/
+│   │       ├── mod.rs            # Modül kökü, re-export'lar
+│   │       ├── types.rs          # ZipEntry, ZipInfo, Progress, CancelFlag
+│   │       ├── utils.rs          # collect_files, write_files_to_zip, yardımcı komutlar
+│   │       ├── archive_read.rs   # list_zip, extract_zip, extract_selected
+│   │       ├── archive_write.rs  # create_zip, zip_folder, add_to_zip, delete_from_zip, create_folder_in_zip
+│   │       └── archive_edit.rs   # rename_in_zip, move_in_zip, copy_in_zip
 │   ├── capabilities/
 │   │   └── default.json          # Tauri v2 izin sistemi (dialog, fs, opener)
 │   ├── Cargo.toml                # Rust bağımlılıkları
@@ -40,18 +49,18 @@ ruzip/
 | Backend | Rust |
 | Frontend | React 18 + TypeScript |
 | Build tool | Vite |
-| ZIP işlemleri | `zip` crate v2 (deflate + aes-crypto features) |
+| ZIP işlemleri | `zip` crate v2 (deflate) |
 | Dosya gezinme | `walkdir` crate |
 | Async | `tokio` (rt-multi-thread + macros) |
 | Tema | Catppuccin Mocha dark |
 
 ---
 
-## Rust Komutları (`commands.rs`)
+## Rust Komutları
 
-Her komut `#[tauri::command]` ile işaretli, `lib.rs`'deki `generate_handler![]` listesine kayıtlı olmalı.
+Komutlar `src-tauri/src/commands/` altında modüler yapıda. Her komut `#[tauri::command]` ile işaretli, `lib.rs`'deki `generate_handler![]` listesine kayıtlı.
 
-### Kayıtlı Komutlar (`lib.rs`)
+### Kayıtlı Komutlar
 ```rust
 list_zip, create_zip, add_to_zip, extract_zip, extract_selected,
 delete_from_zip, create_folder_in_zip, rename_in_zip,
@@ -59,71 +68,61 @@ move_in_zip, copy_in_zip, zip_folder,
 get_temp_dir, open_file, cancel_operation
 ```
 
-### Komut Detayları
+### `archive_read.rs`
 
-#### `list_zip(path: String) -> Result<ZipInfo, String>`
-- ZIP içeriğini listeler, şifreli entry'leri `by_index_raw` ile okur (şifre gerekmez)
-- `ZipEntry` struct: `name, path, size, compressed_size, is_dir, modified, ratio, encrypted, child_count`
-- `ratio` hesabı: `saturating_div` kullanır (overflow önlemi — compressed > size durumu)
+#### `list_zip(path) -> Result<ZipInfo, String>`
+- ZIP içeriğini listeler, `by_index_raw` ile okur (şifre gerekmez)
+- `ZipEntry`: `name, path, size, compressed_size, is_dir, modified, ratio, encrypted, child_count`
 - `child_count`: klasör için direkt çocuk sayısı
 
-#### `create_zip(output, paths, password?) -> Result<(), String>`
-- Verilen dosya/klasör listesinden ZIP oluşturur
-- `password` varsa AES-256 şifreleme (`zip::AesMode::Aes256`)
-- İptal desteği: `CancelFlag` ile
-
-#### `zip_folder(folder_path, output, password?) -> Result<(), String>`
-- Tek klasörü ZIP'ler, `create_zip` ile aynı mantık
-
-#### `add_to_zip(zip_path, paths, password?) -> Result<(), String>`
-- Mevcut ZIP'e dosya/klasör ekler
-- Mevcut entry'leri `raw_copy_file` ile kopyalar (şifreli olanlar korunur)
-- Yeni dosyalar `password` ile şifrelenir
-
 #### `extract_zip(zip_path, output_dir, password?) -> Result<(), String>`
-- Tüm arşivi çıkarır
-- Şifreli entry'ler için `by_index_decrypt` kullanır
+- Tüm arşivi çıkarır, şifreli entry'ler için `by_index_decrypt` kullanır
 
 #### `extract_selected(zip_path, entries, output_dir, password?) -> Result<(), String>`
-- Seçili entry'leri çıkarır (klasör seçilince alt dosyaları da dahil eder — `starts_with` ile)
+- Seçili entry'leri çıkarır, klasör seçilince alt dosyaları da dahil eder (`starts_with`)
+
+### `archive_write.rs`
+
+#### `create_zip(output, paths, password?) -> Result<(), String>`
+- Verilen dosya/klasör listesinden ZIP oluşturur, iptal desteği var
+
+#### `zip_folder(folder_path, output, password?) -> Result<(), String>`
+- Tek klasörü ZIP'ler
+
+#### `add_to_zip(zip_path, paths, password?) -> Result<(), String>`
+- Mevcut ZIP'e dosya/klasör ekler, mevcut entry'leri `raw_copy_file` ile korur
 
 #### `delete_from_zip(zip_path, entries_to_delete) -> Result<(), String>`
-- Seçili entry'leri siler (tmp dosya → rename pattern)
-- **BİLİNEN SORUN**: Şifreli arşivde çalışmaz — `archive_password` parametresi eklenmeli
-
-#### `rename_in_zip(zip_path, old_path, new_name) -> Result<(), String>`
-- Entry'yi yeniden adlandırır, klasör ise tüm alt entry'leri de günceller
-- Borrow fix: önce `by_index_raw` ile name al (scope biter), sonra `by_index` ile oku
-- **BİLİNEN SORUN**: Şifreli entry'lerde çalışmaz — `archive_password` parametresi eklenmeli
-
-#### `move_in_zip(zip_path, src_path, dest_folder) -> Result<(), String>`
-- ZIP içinde dosya/klasörü taşır
-- `dest_folder` boş string → kök dizine taşır
-- Borrow fix uygulandı (rename ile aynı pattern)
-- **BİLİNEN SORUN**: Şifreli entry'lerde çalışmaz
-
-#### `copy_in_zip(zip_path, src_path, dest_folder) -> Result<(), String>`
-- ZIP içinde kopyalar, orijinal kalır
-- Aynı dizine kopyalanırsa `_kopya` suffix'i eklenir
-- **BİLİNEN SORUN**: Şifreli entry'lerde çalışmaz
+- Seçili entry'leri siler (tmp → rename pattern)
+- **Fix**: `name` ve `raw_copy_file` için iki ayrı `by_index_raw` çağrısı (borrow sorunu)
 
 #### `create_folder_in_zip(zip_path, folder_name) -> Result<(), String>`
 - ZIP içinde klasör oluşturur (trailing `/` ekler)
 
-#### `get_temp_dir() -> String`
-- OS temp dizinini döner (dosya açma için geçici çıkarma)
+### `archive_edit.rs`
 
-#### `open_file(path: String) -> Result<(), String>`
-- `tauri-plugin-opener` ile dosyayı varsayılan uygulamada açar
+#### `rename_in_zip(zip_path, old_path, new_name) -> Result<(), String>`
+- Entry'yi yeniden adlandırır, klasör ise tüm alt entry'leri de günceller
+- Borrow fix: `by_index_raw` ile name al → scope biter → `by_index` ile oku
 
-#### `cancel_operation()`
-- `CancelFlag(Arc<AtomicBool>)` state'ini `true` yapar
-- Tüm uzun işlemler her iterasyonda bu flag'i kontrol eder
+#### `move_in_zip(zip_path, src_path, dest_folder) -> Result<(), String>`
+- ZIP içinde taşır, `dest_folder` boş → kök dizine taşır
+
+#### `copy_in_zip(zip_path, src_path, dest_folder) -> Result<(), String>`
+- ZIP içinde kopyalar, aynı dizine kopyalanırsa `_kopya` suffix'i eklenir
+
+### `utils.rs`
+
+- `collect_files(paths)` — WalkDir ile dosya listesi toplar
+- `write_files_to_zip(...)` — dosyaları ZIP'e yazar, iptal flag'i kontrol eder
+- `get_temp_dir()` — OS temp dizinini döner
+- `open_file(path)` — `tauri-plugin-opener` ile varsayılan uygulamada açar
+- `cancel_operation()` — `CancelFlag(Arc<AtomicBool>)` state'ini `true` yapar
 
 ### Önemli Rust Notları
 - **Async pattern**: Tüm dosya işlemleri `tokio::task::spawn_blocking` içinde — UI freeze olmaz
-- **tmp pattern**: Değişiklik yapan komutlar `zip_path + ".tmp"` oluşturur, işlem bitince `fs::rename` ile değiştirir
-- **Borrow checker fix**: `by_index_raw` ile name al → scope biter → `by_index` ile içerik oku (aynı archive'den iki kez borrow yapılamaz)
+- **tmp pattern**: Değişiklik yapan komutlar `zip_path + ".tmp"` oluşturur, bitince `fs::rename`
+- **Borrow checker fix**: `by_index_raw` ile name al → scope biter → `by_index` ile içerik oku
 - **CancelFlag**: `Arc<AtomicBool>` Tauri state olarak yönetilir, `Ordering::Relaxed` yeterli
 
 ---
@@ -131,7 +130,7 @@ get_temp_dir, open_file, cancel_operation
 ## Frontend Bileşenleri
 
 ### `App.tsx`
-Ana state yönetimi ve tüm handler'lar burada.
+Ana state yönetimi ve tüm handler'lar.
 
 **State:**
 ```typescript
@@ -139,11 +138,12 @@ archivePath: string          // Açık ZIP dosyasının tam yolu
 allEntries: ZipEntry[]       // ZIP'teki tüm entry'ler (filtrelenmemiş)
 currentFolder: string        // Mevcut gezinilen klasör yolu (kök = "")
 selected: Set<string>        // Seçili entry path'leri
-checkMode: boolean           // Checkbox seçim modu açık/kapalı
+checkMode: boolean           // Checkbox seçim modu
 clipboard: { paths, mode }   // Kes/kopyala clipboard'u ('cut' | 'copy')
-modal: ModalState | null     // Aktif modal (password/progress/test/newfolder/rename/confirm/error)
-modalInput: string           // Modal input alanı değeri
-progress: ProgressEvt        // İlerleme bilgisi (Rust'tan event ile gelir)
+dragOverUp: boolean          // ↑ .. butonuna sürükleme highlight
+modal: ModalState | null     // Aktif modal
+progress: ProgressEvt        // İlerleme bilgisi (Rust'tan event)
+showAbout: boolean           // Hakkında penceresi
 ```
 
 **visibleEntries filtresi:**
@@ -151,66 +151,43 @@ progress: ProgressEvt        // İlerleme bilgisi (Rust'tan event ile gelir)
 - `currentFolder !== ""` → prefix ile başlayan, bir seviye derinliğindeki entry'ler
 
 **Modal sistemi:**
-- `askPassword(title)` → Promise, modal kapanınca resolve
-- `showConfirm(title, msg)` → Promise, "Evet" → resolve(input), "İptal" → resolve(null)
-- `showError(msg)` → Promise, sadece Tamam butonu
+- `showConfirm(title, msg)` → Promise, "Evet" → resolve, "İptal" → null
+- `showError(msg)` → Promise, sadece Tamam
 - `askRename(current)` → Promise, input ile resolve
-- `confirmModal()` → `modal.resolve(modalInput)` çağırır
-- `cancelModal()` → `modal.resolve(null)` çağırır
 
 **Dosya açma (çift tıklama):**
 1. `get_temp_dir` ile temp dizini al
-2. `extract_selected` ile temp'e çıkar (ZIP içindeki tam path korunur)
+2. `extract_selected` ile temp'e çıkar
 3. `open_file` ile `tmpDir + entry.path` (slash → backslash) aç
-- **Kritik fix**: `entry.name` değil `entry.path` kullanılır (klasör içindeki dosyalar için)
 
 **Navigasyon:**
 - Klasöre çift tıkla → `setCurrentFolder(entry.path)`
-- `↑ ..` butonu → `currentFolder`'dan son segment çıkar
-- `↑ ..` butona drag-drop → bir üst dizine taşı (TODO: `dragOverUp` state + `onDragOver/onDrop` eklenmeli)
+- `↑ ..` butonu → son segment çıkar
+- `↑ ..` butona drag-drop → bir üst dizine taşı
 
 ### `FileList.tsx`
-**Props:**
-```typescript
-entries, selected, checkMode, cutPaths: Set<string>
-onSelect, onCheckToggle, onCheckAll
-onContextMenu, onEmptyContextMenu
-onDoubleClick
-onDrop(srcPath, destFolder)   // ZIP içi drag-drop
-currentFolder
-```
+**Props:** `entries, selected, checkMode, cutPaths, onSelect, onCheckToggle, onCheckAll, onContextMenu, onEmptyContextMenu, onDoubleClick, onDrop, currentFolder`
 
-**Drag-drop (ZIP içi):**
-- `draggable={!checkMode}` — checkMode'da drag kapalı
-- `onDragStart` → `dragSrc.current = entry.path` + `dataTransfer.setData('text/plain', entry.path)`
-- `onDragOver` → sadece klasör satırlarında `preventDefault` + `setDragOverPath`
-- `onDrop` → `onDrop(dragSrc.current, entry.path)` çağırır
-- `drag-target` CSS class → mavi highlight
+- Drag-drop: `draggable={!checkMode}`, `onDragStart` → `dataTransfer.setData`
+- Boş alan sağ tık: `<tr onContextMenu={onEmptyContextMenu}>`
+- `cut-item` class → opacity 0.45, `drag-target` class → mavi highlight
 
-**Checkbox modu:**
-- `col-check` sütunu eklenir (thead'de de checkbox — tümünü seç)
-- `cut-item` class → `opacity: 0.45` (kes yapılan öğeler)
+### `AboutModal.tsx`
+4 sekme: **Uygulama** (sürüm, lisans, GitHub linki) | **Hakkında** (özellik kartları) | **Değişiklikler** (changelog) | **Lisans** (MIT Türkçe)
 
-**Boş alan sağ tık:**
-- `filelist-container`'a `onContextMenu` → `tr` içinde değilse `onEmptyContextMenu` çağırır
-
-### `Dialog.tsx`
-**Kind'lar:** `confirm | warning | error | info | input | rename | password`
-
-Her kind için emoji + renk teması:
-- `confirm` → ❓ mavi
-- `warning` → ⚠️ sarı  
-- `error` → ❌ kırmızı
-- `info` → ℹ️ cyan
-- `input/rename` → ✏️ mor
-- `password` → 🔒 sarı
-
-Input alanı: `kind === 'password'` → `type="password"`, diğerleri `type="text"`
+- `APP_VERSION`, `CHANGELOG`, `GITHUB_URL` sabitleri tek yerden yönetilir
+- `ChangelogEntry`: `added / changed / fixed` grupları ayrı gösterilir
+- Boyut: `min(580px, 92vw)` × `min(560px, 85vh)` — dinamik, sekmeler arası değişmez
 
 ### `Toolbar.tsx`
-Butonlar: Yeni, Aç, Klasör Zip | Dosya Ekle, Klasör Ekle, Yeni Klasör | Tümünü Çıkar, Çıkar | Yeniden Adlandır, Sil, Test | **Seç** (checkMode toggle)
+Butonlar: Yeni, Aç, Klasör Zip | Dosya Ekle, Klasör Ekle, Yeni Klasör | Tümünü Çıkar, Çıkar | Yeniden Adlandır, Sil, Test | Seç | **Hakkında**
 
-`active` prop → `toolbar-btn.active` class → mavi highlight (checkMode açıkken)
+- `disabled` prop → `opacity: 0.4`, tıklanamaz
+- `active && !disabled` → mavi highlight (checkMode)
+- `hasEntries` prop → Seç butonu arşiv boşsa pasif
+
+### `Dialog.tsx`
+Kind'lar: `confirm | warning | error | info | input | rename`
 
 ### `StatusBar.tsx`
 Dosya sayısı, seçili sayı, toplam boyut, sıkıştırılmış boyut, oran, arşiv yolu, durum mesajı.
@@ -233,18 +210,11 @@ Catppuccin Mocha renk değişkenleri:
 --yellow: #f9e2af
 ```
 
-Özel class'lar:
-- `.drag-target` → sürükleme hedefi highlight
-- `.cut-item` → kes yapılan öğe (opacity 0.45)
-- `.toolbar-btn.active` → aktif toggle butonu
-- `.disabled-item` → context menu'de pasif öğe
-
 ---
 
-## Tauri v2 Önemli Notlar
+## Tauri v2 Notlar
 
 ### Capabilities (`capabilities/default.json`)
-Her plugin için explicit izin gerekir, yoksa invoke sessizce başarısız olur:
 ```json
 "dialog:default", "dialog:allow-open", "dialog:allow-save",
 "fs:default", "fs:allow-read-file", "fs:allow-write-file",
@@ -252,29 +222,37 @@ Her plugin için explicit izin gerekir, yoksa invoke sessizce başarısız olur:
 ```
 
 ### Drag-drop (dışarıdan ZIP sürükleme)
-`getCurrentWebview().onDragDropEvent()` kullanılır — HTML5 drag events çalışmaz.  
+`getCurrentWebview().onDragDropEvent()` — HTML5 drag events çalışmaz.  
 `tauri.conf.json`'da `"dragDropEnabled": true` gerekli.
 
 ### Progress Events
 Rust → Frontend: `app.emit("progress", Progress { current, total, file, cancelled })`  
-Frontend: `listen<ProgressEvt>('progress', ...)` ile dinlenir.  
-`total === 0` → işlem bitti (modal kapat).
+`total === 0` → işlem bitti.
 
 ---
 
-## Bilinen Sorunlar / TODO
+## Installer (`installer/ruzip_setup.iss`)
 
-### Kritik
-- [ ] **Şifreli arşivde değişiklik** — `delete_from_zip`, `rename_in_zip`, `move_in_zip`, `copy_in_zip` komutlarına `archive_password: Option<String>` parametresi eklenmeli. Şifreli entry'leri `by_index` yerine `by_index_decrypt(i, pw.as_bytes())` ile okuyup, yeni entry'leri de aynı şifreyle yazmalı.
-- [ ] **Şifreli arşive dosya ekleme** — `add_to_zip` mevcut şifreli entry'leri raw copy ediyor (doğru), yeni dosyaları da aynı şifreyle eklemeli (zaten `password` parametresi var, frontend'den arşiv şifresi geçilmeli).
+Inno Setup scripti — Türkçe + İngilizce dil desteği.
 
-### Orta
-- [ ] **`↑ ..` butonuna drag-drop** — `App.tsx`'te `dragOverUp: boolean` state ekle, addressbar butonuna `onDragOver/onDragLeave/onDrop` handler'ları ekle. Drop'ta: `currentFolder`'dan son segment çıkar → `handleMoveInZip(srcPath, parentFolder)`. `FileList.tsx`'te `onDragStart`'a `e.dataTransfer.setData('text/plain', entry.path)` ekle.
-- [ ] **Şifreli arşiv açma** — `list_zip` şifreli entry'leri listeler ama içerik okumaz (doğru). Kullanıcı şifreli dosyaya çift tıklayınca şifre sorulur, `extract_selected` ile açılır.
+### Sağ Tık Menüsü
+| Konum | Seçenek |
+|-------|---------|
+| ZIP dosyası | RuZip ile Aç |
+| ZIP dosyası | Buraya çıkar |
+| ZIP dosyası | Klasöre çıkar... |
+| Herhangi dosya | RuZip ile Aç |
+| Herhangi dosya | ZIP arşivine ekle (RuZip) |
+| Klasör | RuZip ile Aç |
+| Klasör | ZIP arşivine ekle (RuZip) |
+| Klasör | RuZip ile Zipple |
+| Klasör arka planı | RuZip ile Zipple |
 
-### Küçük
-- [ ] Progress modal'da dosya boyutu gösterimi (placeholder var, `formatBytes(0)` yazıyor)
-- [ ] Sürükle-bırak ile dışarıdan dosya ekleme (şu an sadece ZIP açılıyor)
+### Kurulum Görevleri
+- Masaüstü kısayolu (opsiyonel)
+- `.zip` dosya ilişkilendirmesi
+- Kabuk entegrasyonu (sağ tık menüsü)
+- WebView2 runtime kontrolü
 
 ---
 
@@ -289,39 +267,31 @@ npm run tauri dev
 
 # Production build
 npm run tauri build
-```
 
-### Rust Derleme Kontrolü
-```bash
-cd src-tauri
-cargo check
+# Rust derleme kontrolü
+cd src-tauri && cargo check
 ```
 
 ---
 
-## Installer (`installer/ruzip_setup.iss`)
-Inno Setup scripti:
-- Türkçe + İngilizce dil desteği
-- `.zip` dosya ilişkilendirmesi
-- Shell context menu: "RuZip ile Aç", "Buraya çıkar", "Klasöre çıkar", "ZIP arşivine ekle", "Klasörü zipple"
-- WebView2 runtime kontrolü
-
----
-
-## Mimari Özet
+## Mimari
 
 ```
 Kullanıcı Eylemi
       ↓
 React Handler (App.tsx)
       ↓
-invoke('komut_adi', { params })   ← Tauri IPC köprüsü
+invoke('komut_adi', { params })   ← Tauri IPC
       ↓
-Rust Command (commands.rs)
+Rust Command (commands/)
       ↓ spawn_blocking
 ZIP işlemi (zip crate)
       ↓ app.emit('progress', ...)
-React Progress Listener
-      ↓
-UI Güncelleme
+React Progress Listener → UI
 ```
+
+---
+
+## Lisans
+
+MIT © 2026 RuZip Katkıda Bulunanlar

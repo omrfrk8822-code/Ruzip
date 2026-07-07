@@ -8,6 +8,7 @@ import Toolbar from './components/Toolbar';
 import FileList, { ZipEntry } from './components/FileList';
 import StatusBar from './components/StatusBar';
 import Dialog from './components/Dialog';
+import AboutModal from './components/AboutModal';
 
 interface ZipInfo { entries: ZipEntry[]; total_size: number; total_compressed: number; }
 interface ContextMenuState { x: number; y: number; }
@@ -39,6 +40,7 @@ export default function App() {
   const [modalInput, setModalInput] = useState('');
   const [progress, setProgress] = useState<ProgressEvt | null>(null);
   const [testResult, setTestResult] = useState<TestResult | null>(null);
+  const [showAbout, setShowAbout] = useState(false);
 
   const showStatus = (msg: string) => { setStatus(msg); setTimeout(() => setStatus(''), 3000); };
 
@@ -396,6 +398,7 @@ export default function App() {
         onAddFiles={handleAddFiles} onAddFolder={handleAddFolder} onNewFolder={handleNewFolder}
         onDelete={handleDelete} onTest={handleTest}
         onToggleCheckMode={handleToggleCheckMode} onRename={handleRename}
+        onAbout={() => setShowAbout(true)}
       />
 
       {/* Adres çubuğu + navigasyon */}
@@ -591,6 +594,8 @@ export default function App() {
           </div>
         </div>
       )}
+      {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
+
     </>
   );
 }

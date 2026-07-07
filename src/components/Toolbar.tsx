@@ -3,6 +3,7 @@ interface ToolbarProps {
   hasSelection: boolean;
   hasEntries: boolean;
   checkMode: boolean;
+  onAbout: () => void;
   onOpen: () => void;
   onNew: () => void;
   onExtractAll: () => void;
@@ -33,7 +34,7 @@ function Btn({ label, title, disabled, active, onClick, children }: {
 }
 
 export default function Toolbar({
-  hasArchive, hasSelection, hasEntries, checkMode,
+  hasArchive, hasSelection, hasEntries, checkMode, onAbout,
   onOpen, onNew, onExtractAll, onExtractSelected,
   onAddFiles, onAddFolder, onZipFolder, onNewFolder,
   onDelete, onTest, onToggleCheckMode, onRename
@@ -129,6 +130,15 @@ export default function Toolbar({
           <rect x="14" y="3" width="7" height="7" rx="1"/>
           <rect x="3" y="14" width="7" height="7" rx="1"/>
           <rect x="14" y="14" width="7" height="7" rx="1"/>
+        </svg>
+      </Btn>
+
+      <div className="toolbar-sep" />
+
+      <Btn label="Hakkında" title="Uygulama hakkında" onClick={onAbout}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <circle cx="12" cy="12" r="9"/>
+          <path d="M12 8h.01M12 11v5" strokeLinecap="round"/>
         </svg>
       </Btn>
     </div>

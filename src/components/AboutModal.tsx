@@ -1,0 +1,257 @@
+import { useState } from 'react';
+
+export const APP_VERSION = '0.1.0';
+export const APP_BUILD = '20260101';
+export const GITHUB_URL = 'https://github.com/yourusername/ruzip';
+export const ISSUES_URL = 'https://github.com/yourusername/ruzip/issues';
+
+export interface ChangelogEntry {
+  version: string;
+  date: string;
+  type: 'major' | 'minor' | 'patch';
+  added?: string[];
+  changed?: string[];
+  fixed?: string[];
+}
+
+export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.1.0',
+    date: '01 Ocak 2026',
+    type: 'minor',
+    added: [
+      'ZIP oluşturma, açma ve çıkarma',
+      'ZIP içi taşıma, kopyalama, yeniden adlandırma',
+      'Sürükle-bırak ile ZIP açma ve içi taşıma',
+      'Çoklu seçim modu (checkbox)',
+      'Kes / Kopyala / Yapıştır desteği',
+      'Klasör navigasyonu ve adres çubuğu',
+      'Sağ tık context menü',
+      'İşlem iptali (progress modal)',
+      'Arşiv test aracı',
+    ],
+  },
+];
+
+const BADGE_COLORS: Record<ChangelogEntry['type'], string> = {
+  major: '#f38ba8',
+  minor: '#89b4fa',
+  patch: '#a6e3a1',
+};
+const BADGE_LABELS: Record<ChangelogEntry['type'], string> = {
+  major: 'MAJOR',
+  minor: 'MINOR',
+  patch: 'PATCH',
+};
+
+const LICENSE_TEXT = `MIT Lisansı
+
+Telif Hakkı © 2026 RuZip Katkıda Bulunanlar
+
+Bu yazılımın ve ilgili dokümantasyon dosyalarının ("Yazılım") bir kopyasını
+edinen herkese, aşağıdaki koşullara tabi olmak kaydıyla, Yazılım üzerinde
+ücret ödemeksizin işlem yapma izni verilmektedir. Bu izin; Yazılımı
+kısıtlama olmaksızın kullanma, kopyalama, değiştirme, birleştirme, yayımlama,
+dağıtma, alt lisans verme ve/veya satma haklarını kapsamaktadır.
+
+Yazılımın tüm kopyalarına veya önemli bölümlerine yukarıdaki telif hakkı
+bildirimi ve bu izin bildirimi dahil edilmelidir.
+
+YAZILIM, HERHANGİ BİR GARANTİ OLMAKSIZIN "OLDUĞU GİBİ" SUNULMAKTADIR.
+TİCARİ ELVERİŞLİLİK, BELİRLİ BİR AMACA UYGUNLUK VE İHLAL ETMEME
+GARANTİLERİ DAHİL ANCAK BUNLARLA SINIRLI OLMAMAK ÜZERE HİÇBİR AÇIK VEYA
+ZIMNİ GARANTİ VERİLMEMEKTEDİR. HİÇBİR DURUMDA YAZARLAR VEYA TELİF HAKKI
+SAHİPLERİ; SÖZLEŞME, HAKSIZ FİİL VEYA BAŞKA BİR HUKUKI TEORI KAPSAMINDA
+ORTAYA ÇIKAN ZARAR, KAYIP VEYA DİĞER YÜKÜMLÜLÜKLERDEN SORUMLU TUTULAMAZ.`;
+
+type Tab = 'about' | 'info' | 'changelog' | 'license';
+
+const TABS: { key: Tab; label: string }[] = [
+  { key: 'info',      label: 'Uygulama'       },
+  { key: 'about',     label: 'Hakkında'       },
+  { key: 'changelog', label: 'Değişiklikler'  },
+  { key: 'license',   label: 'Lisans'         },
+];
+
+interface Props { onClose: () => void; }
+
+export default function AboutModal({ onClose }: Props) {
+  const [tab, setTab] = useState<Tab>('info');
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="abt-modal" onClick={e => e.stopPropagation()}>
+
+        {/* Kapat butonu — sağ üst köşe */}
+        <button className="abt-close" onClick={onClose} title="Kapat">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+
+        {/* Header */}
+        <div className="abt-header">
+          <div className="abt-header-glow" />
+          <div className="abt-icon-wrap">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#1e1e2e" strokeWidth="2">
+              <path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/>
+              <path d="M12 10v5m-2.5-2.5h5" strokeLinecap="round"/>
+            </svg>
+          </div>
+          <div className="abt-header-text">
+            <div className="abt-name">RuZip</div>
+            <div className="abt-desc">Türkiye'nin ZIP Arşiv Programı</div>
+            <div className="abt-ver-row">
+              <span className="abt-ver-badge">v{APP_VERSION}</span>
+              <span className="abt-build">© 2026</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="abt-tabs">
+          {TABS.map(t => (
+            <button key={t.key} className={`abt-tab${tab === t.key ? ' active' : ''}`} onClick={() => setTab(t.key)}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Body */}
+        <div className="abt-body">
+
+          {/* ── HAKKINDA ── */}
+          {tab === 'about' && (
+            <div className="abt-about-wrap">
+              <div className="abt-about-hero">
+                <div className="abt-about-icon">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#89b4fa" strokeWidth="1.4">
+                    <path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/>
+                    <path d="M12 10v5m-2.5-2.5h5" strokeLinecap="round"/>
+                  </svg>
+                </div>
+                <p className="abt-about-desc">
+                  RuZip, Türkiye'de geliştirilen açık kaynaklı bir ZIP arşiv programıdır.
+                  Dosyalarınızı sıkıştırıp arşivleyebilir, mevcut ZIP dosyalarını açabilir
+                  ve içeriklerini yönetebilirsiniz — hepsi sade ve hızlı bir arayüzle.
+                </p>
+              </div>
+
+              <div className="abt-feature-grid">
+                {[
+                  { icon: '📦', title: 'Arşiv Oluştur', desc: 'Dosya ve klasörlerinizden ZIP arşivi oluşturun' },
+                  { icon: '📂', title: 'Arşiv Aç', desc: 'ZIP dosyalarını açın, içeriğini görüntüleyin' },
+                  { icon: '⬇️', title: 'Çıkar', desc: 'Arşiv içindeki dosyaları dışarı çıkarın' },
+                  { icon: '✂️', title: 'Düzenle', desc: 'Arşiv içinde taşı, kopyala, yeniden adlandır' },
+                  { icon: '🖱️', title: 'Sürükle & Bırak', desc: 'Dosyaları sürükleyerek arşive ekleyin' },
+                  { icon: '⚡', title: 'Hızlı & Hafif', desc: 'Rust ile yazılmış, düşük kaynak kullanımı' },
+                ].map(f => (
+                  <div key={f.title} className="abt-feature-card">
+                    <span className="abt-feature-icon">{f.icon}</span>
+                    <div>
+                      <div className="abt-feature-title">{f.title}</div>
+                      <div className="abt-feature-desc">{f.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── UYGULAMA ── */}
+          {tab === 'info' && (
+            <>
+              <div className="abt-info-grid">
+                <div className="abt-info-cell">
+                  <div className="abt-info-label">Sürüm</div>
+                  <div className="abt-info-val accent">{APP_VERSION}</div>
+                </div>
+                <div className="abt-info-cell">
+                  <div className="abt-info-label">Lisans</div>
+                  <div className="abt-info-val">MIT</div>
+                </div>
+                <div className="abt-info-cell">
+                  <div className="abt-info-label">Yayın Tarihi</div>
+                  <div className="abt-info-val">01 Ocak 2026</div>
+                </div>
+                <div className="abt-info-cell">
+                  <div className="abt-info-label">Geliştirici</div>
+                  <div className="abt-info-val">
+                    <a className="abt-link-inline" href="https://github.com/omrfrk8822-code/" target="_blank" rel="noreferrer">omrfrk8822-code</a>
+                  </div>
+                </div>
+              </div>
+
+              <div className="abt-section-title">Bağlantılar</div>
+              <div className="abt-links">
+                <a className="abt-link-btn" href={GITHUB_URL} target="_blank" rel="noreferrer">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.868-.013-1.703-2.782.604-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836a9.59 9.59 0 012.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/>
+                  </svg>
+                  GitHub'da İncele
+                </a>
+              </div>
+            </>
+          )}
+
+          {/* ── DEĞİŞİKLİKLER ── */}
+          {tab === 'changelog' && (
+            <div className="abt-changelog">
+              {CHANGELOG.map(entry => (
+                <div key={entry.version} className="abt-cl-entry">
+                  <div className="abt-cl-head">
+                    <span className="abt-cl-ver">v{entry.version}</span>
+                    <span className="abt-cl-type" style={{ color: BADGE_COLORS[entry.type], borderColor: BADGE_COLORS[entry.type] + '55', background: BADGE_COLORS[entry.type] + '18' }}>
+                      {BADGE_LABELS[entry.type]}
+                    </span>
+                    <span className="abt-cl-date">{entry.date}</span>
+                  </div>
+                  {entry.added && (
+                    <div className="abt-cl-group">
+                      <div className="abt-cl-group-label added">Eklendi</div>
+                      <ul className="abt-cl-list">{entry.added.map((n, i) => <li key={i}>{n}</li>)}</ul>
+                    </div>
+                  )}
+                  {entry.changed && (
+                    <div className="abt-cl-group">
+                      <div className="abt-cl-group-label changed">Değişti</div>
+                      <ul className="abt-cl-list">{entry.changed.map((n, i) => <li key={i}>{n}</li>)}</ul>
+                    </div>
+                  )}
+                  {entry.fixed && (
+                    <div className="abt-cl-group">
+                      <div className="abt-cl-group-label fixed">Düzeltildi</div>
+                      <ul className="abt-cl-list">{entry.fixed.map((n, i) => <li key={i}>{n}</li>)}</ul>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── LİSANS ── */}
+          {tab === 'license' && (
+            <div className="abt-license">
+              <div className="abt-license-header">
+                <span className="abt-license-badge">MIT</span>
+                <span className="abt-license-year">© 2026 RuZip Katkıda Bulunanlar</span>
+              </div>
+              <pre className="abt-license-text">{LICENSE_TEXT}</pre>
+            </div>
+          )}
+
+        </div>
+
+        {/* Footer */}
+        <div className="abt-footer">
+          <span>RuZip v{APP_VERSION}</span>
+          <span className="abt-footer-dot" />
+          <span>Tauri v2 + Rust + React</span>
+          <span className="abt-footer-dot" />
+          <span>MIT Lisansı</span>
+        </div>
+
+      </div>
+    </div>
+  );
+}
