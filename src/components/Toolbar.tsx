@@ -1,6 +1,7 @@
 interface ToolbarProps {
   hasArchive: boolean;
   hasSelection: boolean;
+  hasEntries: boolean;
   checkMode: boolean;
   onOpen: () => void;
   onNew: () => void;
@@ -22,7 +23,7 @@ function Btn({ label, title, disabled, active, onClick, children }: {
 }) {
   return (
     <button
-      className={`toolbar-btn${disabled ? ' disabled' : ''}${active ? ' active' : ''}`}
+      className={`toolbar-btn${disabled ? ' disabled' : ''}${active && !disabled ? ' active' : ''}`}
       onClick={disabled ? undefined : onClick}
       title={title}
     >
@@ -32,7 +33,7 @@ function Btn({ label, title, disabled, active, onClick, children }: {
 }
 
 export default function Toolbar({
-  hasArchive, hasSelection, checkMode,
+  hasArchive, hasSelection, hasEntries, checkMode,
   onOpen, onNew, onExtractAll, onExtractSelected,
   onAddFiles, onAddFolder, onZipFolder, onNewFolder,
   onDelete, onTest, onToggleCheckMode, onRename
@@ -121,7 +122,7 @@ export default function Toolbar({
 
       <div className="toolbar-sep" />
 
-      <Btn label="Seç" title="Çoklu seçim modunu aç/kapat" active={checkMode} onClick={onToggleCheckMode}>
+      <Btn label="Seç" title="Çoklu seçim modunu aç/kapat" disabled={!hasEntries} active={checkMode} onClick={onToggleCheckMode}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
           <rect x="3" y="3" width="7" height="7" rx="1"/>
           <path d="M7 7l1.5 1.5L11 6" strokeLinecap="round" strokeLinejoin="round"/>

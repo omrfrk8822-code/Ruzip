@@ -14,7 +14,7 @@ interface ContextMenuState { x: number; y: number; }
 interface ProgressEvt { current: number; total: number; file: string; cancelled: boolean; }
 interface TestResult { ok: boolean; message: string; details: string[]; }
 
-type ModalType = 'password' | 'progress' | 'test' | 'newfolder' | 'rename' | 'confirm' | 'error';
+type ModalType = 'progress' | 'test' | 'newfolder' | 'rename' | 'confirm' | 'error';
 interface ModalState {
   type: ModalType;
   title?: string;
@@ -31,7 +31,6 @@ export default function App() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [checkMode, setCheckMode] = useState(false);
   const [clipboard, setClipboard] = useState<{ paths: string[]; mode: 'cut' | 'copy' } | null>(null);
-  const [archivePassword, setArchivePassword] = useState<string | null>(null);
   const [status, setStatus] = useState('');
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -42,9 +41,6 @@ export default function App() {
   const [testResult, setTestResult] = useState<TestResult | null>(null);
 
   const showStatus = (msg: string) => { setStatus(msg); setTimeout(() => setStatus(''), 3000); };
-
-  const askPassword = (title = 'Şifre'): Promise<string | null> =>
-    new Promise(resolve => { setModalInput(''); setModal({ type: 'password', title, resolve }); });
 
   const showConfirm = (title: string, msg: string): Promise<string | null> =>
     new Promise(resolve => { setModal({ type: 'confirm', title, message: msg, resolve }); });
@@ -71,28 +67,18 @@ export default function App() {
     }
   });
 
-  const loadArchive = useCallback(async (path: string, knownPassword?: string | null) => {
+  const loadArchive = useCallback(async (path: string) => {
     try {
       setStatus('Yükleniyor...');
       setAllEntries([]);
       const info: ZipInfo = await invoke('list_zip', { path });
       // Şifreli entry var mı kontrol et
-      const hasEncrypted = info.entries.some((e: ZipEntry) => e.encrypted);
-      let pw = knownPassword !== undefined ? knownPassword : null;
-      if (hasEncrypted && pw === null) {
-        pw = await new Promise<string | null>(resolve => {
-          setModalInput('');
-          setModal({ type: 'password', title: 'Arşiv Şifresi', resolve });
-        });
-        if (pw === null) { setStatus(''); return; }
-      }
       setArchivePath(path);
       setAllEntries(info.entries);
       setTotalSize(info.total_size);
       setTotalCompressed(info.total_compressed);
       setCurrentFolder('');
       setSelected(new Set());
-      setArchivePassword(pw);
       setStatus('');
     } catch (e: any) {
       setStatus('');
@@ -151,11 +137,9 @@ export default function App() {
     if (!savePath) return;
     const files = await open({ multiple: true, directory: false });
     if (!files || (Array.isArray(files) && files.length === 0)) return;
-    const pw = await askPassword('Arşiv Şifresi (opsiyonel)');
-    if (pw === undefined) return;
     try {
-      await invoke('create_zip', { output: savePath, paths: Array.isArray(files) ? files : [files], password: pw || null });
-      await loadArchive(savePath, pw || null);
+      await invoke('create_zip', { output: savePath, paths: Array.isArray(files) ? files : [files], password: null });
+      await loadArchive(savePath);
       showStatus('Arşiv oluşturuldu.');
     } catch (e: any) { if (String(e) !== 'İptal edildi') await showError(String(e)); }
   };
@@ -166,11 +150,9 @@ export default function App() {
     const folderName = folder.replace(/.*[/\\]/, '');
     const savePath = await save({ filters: [{ name: 'ZIP Arşivi', extensions: ['zip'] }], defaultPath: folderName + '.zip' });
     if (!savePath) return;
-    const pw = await askPassword('Arşiv Şifresi (opsiyonel)');
-    if (pw === undefined) return;
     try {
-      await invoke('zip_folder', { folderPath: folder, output: savePath, password: pw || null });
-      await loadArchive(savePath, pw || null);
+      await invoke('zip_folder', { folderPath: folder, output: savePath, password: null });
+      await loadArchive(savePath);
       showStatus('Klasör ziplendi.');
     } catch (e: any) { if (String(e) !== 'İptal edildi') await showError(String(e)); }
   };
@@ -179,11 +161,9 @@ export default function App() {
     if (!archivePath) return;
     const files = await open({ multiple: true, directory: false });
     if (!files || (Array.isArray(files) && files.length === 0)) return;
-    const pw = await askPassword('Dosyalar için Şifre (opsiyonel)');
-    if (pw === undefined) return;
     try {
-      await invoke('add_to_zip', { zipPath: archivePath, paths: Array.isArray(files) ? files : [files], password: pw || null });
-      await loadArchive(archivePath, archivePassword);
+      await invoke('add_to_zip', { zipPath: archivePath, paths: Array.isArray(files) ? files : [files], password: null });
+      await loadArchive(archivePath);
       showStatus('Dosyalar eklendi.');
     } catch (e: any) { if (String(e) !== 'İptal edildi') await showError(String(e)); }
   };
@@ -192,11 +172,9 @@ export default function App() {
     if (!archivePath) return;
     const folder = await open({ directory: true, multiple: false });
     if (typeof folder !== 'string') return;
-    const pw = await askPassword('Klasör için Şifre (opsiyonel)');
-    if (pw === undefined) return;
     try {
-      await invoke('add_to_zip', { zipPath: archivePath, paths: [folder], password: pw || null });
-      await loadArchive(archivePath, archivePassword);
+      await invoke('add_to_zip', { zipPath: archivePath, paths: [folder], password: null });
+      await loadArchive(archivePath);
       showStatus('Klasör eklendi.');
     } catch (e: any) { if (String(e) !== 'İptal edildi') await showError(String(e)); }
   };
@@ -214,7 +192,7 @@ export default function App() {
     const fullPath = currentFolder ? `${currentFolder}/${name}` : name;
     try {
       await invoke('create_folder_in_zip', { zipPath: archivePath, folderName: fullPath });
-      await loadArchive(archivePath, archivePassword);
+      await loadArchive(archivePath);
       showStatus(`"${name}" klasörü oluşturuldu.`);
     } catch (e: any) { await showError(String(e)); }
   };
@@ -223,11 +201,8 @@ export default function App() {
     if (!archivePath) return;
     const dir = await open({ directory: true, multiple: false });
     if (typeof dir !== 'string') return;
-    const hasEncrypted = allEntries.some(e => e.encrypted);
-    const pw = await askPassword(hasEncrypted ? 'Arşiv Şifresi' : 'Şifre (opsiyonel)');
-    if (pw === undefined) return;
     try {
-      await invoke('extract_zip', { zipPath: archivePath, outputDir: dir, password: pw || null });
+      await invoke('extract_zip', { zipPath: archivePath, outputDir: dir, password: null });
       showStatus('Tümü çıkarıldı.');
     } catch (e: any) { if (String(e) !== 'İptal edildi') await showError(String(e)); }
   };
@@ -236,12 +211,8 @@ export default function App() {
     if (!archivePath || selected.size === 0) return;
     const dir = await open({ directory: true, multiple: false });
     if (typeof dir !== 'string') return;
-    const selEntries = allEntries.filter(e => selected.has(e.path));
-    const hasEncrypted = selEntries.some(e => e.encrypted);
-    const pw = await askPassword(hasEncrypted ? 'Arşiv Şifresi' : 'Şifre (opsiyonel)');
-    if (pw === undefined) return;
     try {
-      await invoke('extract_selected', { zipPath: archivePath, entries: Array.from(selected), outputDir: dir, password: pw || null });
+      await invoke('extract_selected', { zipPath: archivePath, entries: Array.from(selected), outputDir: dir, password: null });
       showStatus('Seçilenler çıkarıldı.');
     } catch (e: any) { if (String(e) !== 'İptal edildi') await showError(String(e)); }
   };
@@ -251,9 +222,15 @@ export default function App() {
     const yes = await showConfirm('Sil', `${selected.size} öğe kalıcı olarak silinsin mi?`);
     if (!yes) return;
     try {
-      await invoke('delete_from_zip', { zipPath: archivePath, entriesToDelete: Array.from(selected), archivePassword });
-      await loadArchive(archivePath, archivePassword);
+      await invoke('delete_from_zip', { zipPath: archivePath, entriesToDelete: Array.from(selected) });
+      await loadArchive(archivePath);
       setSelected(new Set());
+      setCheckMode(false);
+      if (allEntries.length === selected.size) {
+        setArchivePath('');
+        setAllEntries([]);
+        return;
+      }
       showStatus('Silindi.');
     } catch (e: any) { if (String(e) !== 'İptal edildi') await showError(String(e)); }
   };
@@ -289,14 +266,9 @@ export default function App() {
       setSelected(new Set());
       return;
     }
-    let pw: string | null = archivePassword;
-    if (entry.encrypted && !pw) {
-      pw = await askPassword('Dosya Şifresi');
-      if (pw === null) return;
-    }
     try {
       const tmpDir = await invoke<string>('get_temp_dir');
-      await invoke('extract_selected', { zipPath: archivePath, entries: [entry.path], outputDir: tmpDir, password: pw });
+      await invoke('extract_selected', { zipPath: archivePath, entries: [entry.path], outputDir: tmpDir, password: null });
       const base = tmpDir.replace(/[/\\]$/, '');
       const entryPath = entry.path.replace(/\//g, '\\');
       await invoke('open_file', { path: base + '\\' + entryPath });
@@ -319,8 +291,8 @@ export default function App() {
     const newName = await askRename(entry.name);
     if (!newName || newName === entry.name) return;
     try {
-      await invoke('rename_in_zip', { zipPath: archivePath, oldPath: entry.path, newName, archivePassword });
-      await loadArchive(archivePath, archivePassword);
+      await invoke('rename_in_zip', { zipPath: archivePath, oldPath: entry.path, newName });
+      await loadArchive(archivePath);
       showStatus(`"${entry.name}" → "${newName}" olarak yeniden adlandırıldı.`);
     } catch (e: any) { await showError(String(e)); }
   };
@@ -328,8 +300,8 @@ export default function App() {
   const handleMoveInZip = async (srcPath: string, destFolder: string) => {
     if (!archivePath) return;
     try {
-      await invoke('move_in_zip', { zipPath: archivePath, srcPath, destFolder, archivePassword });
-      await loadArchive(archivePath, archivePassword);
+      await invoke('move_in_zip', { zipPath: archivePath, srcPath, destFolder });
+      await loadArchive(archivePath);
       showStatus('Taşındı.');
     } catch (e: any) { await showError(String(e)); }
   };
@@ -351,13 +323,13 @@ export default function App() {
     try {
       for (const srcPath of clipboard.paths) {
         if (clipboard.mode === 'cut') {
-          await invoke('move_in_zip', { zipPath: archivePath, srcPath, destFolder: currentFolder, archivePassword });
+          await invoke('move_in_zip', { zipPath: archivePath, srcPath, destFolder: currentFolder });
         } else {
-          await invoke('copy_in_zip', { zipPath: archivePath, srcPath, destFolder: currentFolder, archivePassword });
+          await invoke('copy_in_zip', { zipPath: archivePath, srcPath, destFolder: currentFolder });
         }
       }
       if (clipboard.mode === 'cut') setClipboard(null);
-      await loadArchive(archivePath, archivePassword);
+      await loadArchive(archivePath);
       showStatus('Yapıştırıldı.');
     } catch (e: any) { await showError(String(e)); }
   };
@@ -418,7 +390,7 @@ export default function App() {
   return (
     <>
       <Toolbar
-        hasArchive={!!archivePath} hasSelection={selected.size > 0} checkMode={checkMode}
+        hasArchive={!!archivePath} hasSelection={selected.size > 0} hasEntries={visibleEntries.length > 0} checkMode={checkMode}
         onOpen={handleOpen} onNew={handleNew} onZipFolder={handleZipFolder}
         onExtractAll={handleExtractAll} onExtractSelected={handleExtractSelected}
         onAddFiles={handleAddFiles} onAddFolder={handleAddFolder} onNewFolder={handleNewFolder}
@@ -534,12 +506,6 @@ export default function App() {
       )}
 
       {/* Dialog Modalleri */}
-      {modal?.type === 'password' && (
-        <Dialog kind="password" title={modal.title || 'Şifre'}
-          message="Şifreyi girin (boş bırakırsanız şifresiz devam eder):"
-          inputValue={modalInput} onInputChange={setModalInput}
-          onConfirm={confirmModal} onCancel={cancelModal} />
-      )}
       {modal?.type === 'confirm' && (
         <Dialog kind="warning" title={modal.title || 'Onayla'}
           message={modal.message || 'Emin misiniz?'}

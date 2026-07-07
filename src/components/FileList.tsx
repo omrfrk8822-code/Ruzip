@@ -203,8 +203,8 @@ export default function FileList({
             </tr>
           ))}
           {sorted.length === 0 && (
-            <tr>
-              <td colSpan={checkMode ? 7 : 6} style={{ textAlign: 'center', padding: '32px', color: 'var(--text2)', fontSize: 13 }}>
+            <tr onContextMenu={onEmptyContextMenu}>
+              <td colSpan={checkMode ? 7 : 6} style={{ textAlign: 'center', padding: '32px', color: 'var(--text2)', fontSize: 13, cursor: 'default' }}>
                 {currentFolder ? 'Bu klasör boş' : 'Arşiv boş'}
               </td>
             </tr>
