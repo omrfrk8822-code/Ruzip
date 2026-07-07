@@ -74,7 +74,6 @@ export default function App() {
       setStatus('Yükleniyor...');
       setAllEntries([]);
       const info: ZipInfo = await invoke('list_zip', { path });
-      // Şifreli entry var mı kontrol et
       setArchivePath(path);
       setAllEntries(info.entries);
       setTotalSize(info.total_size);
@@ -223,16 +222,19 @@ export default function App() {
     if (!archivePath || selected.size === 0) return;
     const yes = await showConfirm('Sil', `${selected.size} öğe kalıcı olarak silinsin mi?`);
     if (!yes) return;
+    const willBeEmpty = allEntries.length === selected.size;
     try {
       await invoke('delete_from_zip', { zipPath: archivePath, entriesToDelete: Array.from(selected) });
-      await loadArchive(archivePath);
       setSelected(new Set());
       setCheckMode(false);
-      if (allEntries.length === selected.size) {
+      if (willBeEmpty) {
         setArchivePath('');
         setAllEntries([]);
+        setTotalSize(0);
+        setTotalCompressed(0);
         return;
       }
+      await loadArchive(archivePath);
       showStatus('Silindi.');
     } catch (e: any) { if (String(e) !== 'İptal edildi') await showError(String(e)); }
   };
@@ -550,9 +552,7 @@ export default function App() {
             </div>
             <div style={{ marginTop: 8, fontSize: 11, color: 'var(--text2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span>{progress.current} / {progress.total} dosya</span>
-              <span style={{ color: 'var(--text2)' }}>
-                {progress.total > 0 && formatBytes(0)} {/* placeholder */}
-              </span>
+              <span />
             </div>
             <div className="modal-actions" style={{ marginTop: 16 }}>
               <button className="btn btn-secondary" onClick={handleCancel} style={{ color: 'var(--red)', borderColor: 'var(--red)' }}>
