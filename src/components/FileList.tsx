@@ -149,6 +149,7 @@ export default function FileList({
               onDragStart={e => {
                 dragSrc.current = entry.path;
                 e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', entry.path);
               }}
               onDragOver={e => {
                 if (entry.is_dir && dragSrc.current !== entry.path) {

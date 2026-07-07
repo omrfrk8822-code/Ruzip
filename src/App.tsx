@@ -31,9 +31,11 @@ export default function App() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [checkMode, setCheckMode] = useState(false);
   const [clipboard, setClipboard] = useState<{ paths: string[]; mode: 'cut' | 'copy' } | null>(null);
+  const [archivePassword, setArchivePassword] = useState<string | null>(null);
   const [status, setStatus] = useState('');
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [dragOverUp, setDragOverUp] = useState(false);
   const [modal, setModal] = useState<ModalState | null>(null);
   const [modalInput, setModalInput] = useState('');
   const [progress, setProgress] = useState<ProgressEvt | null>(null);
@@ -69,17 +71,28 @@ export default function App() {
     }
   });
 
-  const loadArchive = useCallback(async (path: string) => {
+  const loadArchive = useCallback(async (path: string, knownPassword?: string | null) => {
     try {
       setStatus('Yükleniyor...');
       setAllEntries([]);
       const info: ZipInfo = await invoke('list_zip', { path });
+      // Şifreli entry var mı kontrol et
+      const hasEncrypted = info.entries.some((e: ZipEntry) => e.encrypted);
+      let pw = knownPassword !== undefined ? knownPassword : null;
+      if (hasEncrypted && pw === null) {
+        pw = await new Promise<string | null>(resolve => {
+          setModalInput('');
+          setModal({ type: 'password', title: 'Arşiv Şifresi', resolve });
+        });
+        if (pw === null) { setStatus(''); return; }
+      }
       setArchivePath(path);
       setAllEntries(info.entries);
       setTotalSize(info.total_size);
       setTotalCompressed(info.total_compressed);
       setCurrentFolder('');
       setSelected(new Set());
+      setArchivePassword(pw);
       setStatus('');
     } catch (e: any) {
       setStatus('');
@@ -142,7 +155,7 @@ export default function App() {
     if (pw === undefined) return;
     try {
       await invoke('create_zip', { output: savePath, paths: Array.isArray(files) ? files : [files], password: pw || null });
-      await loadArchive(savePath);
+      await loadArchive(savePath, pw || null);
       showStatus('Arşiv oluşturuldu.');
     } catch (e: any) { if (String(e) !== 'İptal edildi') await showError(String(e)); }
   };
@@ -157,7 +170,7 @@ export default function App() {
     if (pw === undefined) return;
     try {
       await invoke('zip_folder', { folderPath: folder, output: savePath, password: pw || null });
-      await loadArchive(savePath);
+      await loadArchive(savePath, pw || null);
       showStatus('Klasör ziplendi.');
     } catch (e: any) { if (String(e) !== 'İptal edildi') await showError(String(e)); }
   };
@@ -170,7 +183,7 @@ export default function App() {
     if (pw === undefined) return;
     try {
       await invoke('add_to_zip', { zipPath: archivePath, paths: Array.isArray(files) ? files : [files], password: pw || null });
-      await loadArchive(archivePath);
+      await loadArchive(archivePath, archivePassword);
       showStatus('Dosyalar eklendi.');
     } catch (e: any) { if (String(e) !== 'İptal edildi') await showError(String(e)); }
   };
@@ -183,7 +196,7 @@ export default function App() {
     if (pw === undefined) return;
     try {
       await invoke('add_to_zip', { zipPath: archivePath, paths: [folder], password: pw || null });
-      await loadArchive(archivePath);
+      await loadArchive(archivePath, archivePassword);
       showStatus('Klasör eklendi.');
     } catch (e: any) { if (String(e) !== 'İptal edildi') await showError(String(e)); }
   };
@@ -201,7 +214,7 @@ export default function App() {
     const fullPath = currentFolder ? `${currentFolder}/${name}` : name;
     try {
       await invoke('create_folder_in_zip', { zipPath: archivePath, folderName: fullPath });
-      await loadArchive(archivePath);
+      await loadArchive(archivePath, archivePassword);
       showStatus(`"${name}" klasörü oluşturuldu.`);
     } catch (e: any) { await showError(String(e)); }
   };
@@ -238,8 +251,8 @@ export default function App() {
     const yes = await showConfirm('Sil', `${selected.size} öğe kalıcı olarak silinsin mi?`);
     if (!yes) return;
     try {
-      await invoke('delete_from_zip', { zipPath: archivePath, entriesToDelete: Array.from(selected) });
-      await loadArchive(archivePath);
+      await invoke('delete_from_zip', { zipPath: archivePath, entriesToDelete: Array.from(selected), archivePassword });
+      await loadArchive(archivePath, archivePassword);
       setSelected(new Set());
       showStatus('Silindi.');
     } catch (e: any) { if (String(e) !== 'İptal edildi') await showError(String(e)); }
@@ -276,8 +289,8 @@ export default function App() {
       setSelected(new Set());
       return;
     }
-    let pw: string | null = null;
-    if (entry.encrypted) {
+    let pw: string | null = archivePassword;
+    if (entry.encrypted && !pw) {
       pw = await askPassword('Dosya Şifresi');
       if (pw === null) return;
     }
@@ -306,8 +319,8 @@ export default function App() {
     const newName = await askRename(entry.name);
     if (!newName || newName === entry.name) return;
     try {
-      await invoke('rename_in_zip', { zipPath: archivePath, oldPath: entry.path, newName });
-      await loadArchive(archivePath);
+      await invoke('rename_in_zip', { zipPath: archivePath, oldPath: entry.path, newName, archivePassword });
+      await loadArchive(archivePath, archivePassword);
       showStatus(`"${entry.name}" → "${newName}" olarak yeniden adlandırıldı.`);
     } catch (e: any) { await showError(String(e)); }
   };
@@ -315,8 +328,8 @@ export default function App() {
   const handleMoveInZip = async (srcPath: string, destFolder: string) => {
     if (!archivePath) return;
     try {
-      await invoke('move_in_zip', { zipPath: archivePath, srcPath, destFolder });
-      await loadArchive(archivePath);
+      await invoke('move_in_zip', { zipPath: archivePath, srcPath, destFolder, archivePassword });
+      await loadArchive(archivePath, archivePassword);
       showStatus('Taşındı.');
     } catch (e: any) { await showError(String(e)); }
   };
@@ -338,13 +351,13 @@ export default function App() {
     try {
       for (const srcPath of clipboard.paths) {
         if (clipboard.mode === 'cut') {
-          await invoke('move_in_zip', { zipPath: archivePath, srcPath, destFolder: currentFolder });
+          await invoke('move_in_zip', { zipPath: archivePath, srcPath, destFolder: currentFolder, archivePassword });
         } else {
-          await invoke('copy_in_zip', { zipPath: archivePath, srcPath, destFolder: currentFolder });
+          await invoke('copy_in_zip', { zipPath: archivePath, srcPath, destFolder: currentFolder, archivePassword });
         }
       }
       if (clipboard.mode === 'cut') setClipboard(null);
-      await loadArchive(archivePath);
+      await loadArchive(archivePath, archivePassword);
       showStatus('Yapıştırıldı.');
     } catch (e: any) { await showError(String(e)); }
   };
@@ -418,13 +431,32 @@ export default function App() {
         <button
           onClick={handleGoUp}
           disabled={!currentFolder}
-          style={{
-            background: 'none', border: '1px solid var(--border)', borderRadius: 3,
-            color: currentFolder ? 'var(--text)' : 'var(--border)',
-            cursor: currentFolder ? 'pointer' : 'default',
-            padding: '2px 8px', fontSize: 13, marginRight: 4, flexShrink: 0
+          onDragOver={e => {
+            if (!currentFolder) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            setDragOverUp(true);
           }}
-          title="Üst klasöre çık"
+          onDragLeave={() => setDragOverUp(false)}
+          onDrop={e => {
+            e.preventDefault();
+            setDragOverUp(false);
+            const src = e.dataTransfer.getData('text/plain');
+            if (!src || !currentFolder) return;
+            const parts = currentFolder.split('/').filter(Boolean);
+            parts.pop();
+            handleMoveInZip(src, parts.join('/'));
+          }}
+          style={{
+            background: dragOverUp ? 'rgba(137,180,250,0.2)' : 'none',
+            border: `1px solid ${dragOverUp ? 'var(--accent)' : currentFolder ? 'var(--border)' : 'transparent'}`,
+            borderRadius: 3,
+            color: dragOverUp ? 'var(--accent)' : currentFolder ? 'var(--text)' : 'var(--border)',
+            cursor: currentFolder ? 'pointer' : 'default',
+            padding: '2px 8px', fontSize: 13, marginRight: 4, flexShrink: 0,
+            transition: 'all 0.1s'
+          }}
+          title="Üst klasöre çık (veya sürükle bırak)"
         >↑ ..</button>
         <span className="addressbar-label">Konum:</span>
         <div className="addressbar-path">{archivePath ? breadcrumb : 'Arşiv açılmadı'}</div>

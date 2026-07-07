@@ -335,6 +335,7 @@ pub async fn delete_from_zip(
     flag: State<'_, CancelFlag>,
     zip_path: String,
     entries_to_delete: Vec<String>,
+    archive_password: Option<String>,
 ) -> Result<(), String> {
     flag.0.store(false, Ordering::Relaxed);
     let flag_clone = flag.0.clone();
@@ -352,10 +353,32 @@ pub async fn delete_from_zip(
                     let _ = app.emit("progress", Progress { current: 0, total: 0, file: String::new(), cancelled: true });
                     return Err("İptal edildi".to_string());
                 }
-                let name = src_archive.by_index_raw(i).map_err(|e| e.to_string())?.name().to_string();
+                let name = {
+                    let e = src_archive.by_index_raw(i).map_err(|e| e.to_string())?;
+                    e.name().to_string()
+                };
                 let _ = app.emit("progress", Progress { current: i + 1, total, file: name.clone(), cancelled: false });
                 if entries_to_delete.iter().any(|d| name.starts_with(d.as_str())) { continue; }
-                dst_zip.raw_copy_file(src_archive.by_index_raw(i).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
+                // Şifreli entry'yi şifre ile oku, yeniden şifre ile yaz
+                let is_enc = src_archive.by_index_raw(i).map_err(|e| e.to_string())?.encrypted();
+                if is_enc {
+                    if let Some(ref pw) = archive_password {
+                        let mut entry = src_archive.by_index_decrypt(i, pw.as_bytes()).map_err(|e| e.to_string())?;
+                        let mut buf = Vec::new();
+                        io::copy(&mut entry, &mut buf).map_err(|e| e.to_string())?;
+                        let opts = SimpleFileOptions::default()
+                            .compression_method(CompressionMethod::Deflated)
+                            .with_aes_encryption(zip::AesMode::Aes256, pw);
+                        dst_zip.start_file(&name, opts).map_err(|e| e.to_string())?;
+                        dst_zip.write_all(&buf).map_err(|e| e.to_string())?;
+                    } else {
+                        let raw = src_archive.by_index_raw(i).map_err(|e| e.to_string())?;
+                        dst_zip.raw_copy_file(raw).map_err(|e| e.to_string())?;
+                    }
+                } else {
+                    let raw = src_archive.by_index_raw(i).map_err(|e| e.to_string())?;
+                    dst_zip.raw_copy_file(raw).map_err(|e| e.to_string())?;
+                }
             }
             dst_zip.finish().map_err(|e| e.to_string())?;
         }
@@ -387,7 +410,7 @@ pub async fn create_folder_in_zip(zip_path: String, folder_name: String) -> Resu
 }
 
 #[tauri::command]
-pub async fn rename_in_zip(zip_path: String, old_path: String, new_name: String) -> Result<(), String> {
+pub async fn rename_in_zip(zip_path: String, old_path: String, new_name: String, archive_password: Option<String>) -> Result<(), String> {
     task::spawn_blocking(move || {
         let tmp_path = zip_path.clone() + ".tmp";
         {
@@ -401,34 +424,49 @@ pub async fn rename_in_zip(zip_path: String, old_path: String, new_name: String)
             let new_base = format!("{}{}", parent, new_name);
 
             for i in 0..src_archive.len() {
-                let name = {
+                let (name, is_enc) = {
                     let e = src_archive.by_index_raw(i).map_err(|e| e.to_string())?;
-                    e.name().to_string()
+                    (e.name().to_string(), e.encrypted())
                 };
 
-                // Bu entry yeniden adlandırılacak mı?
                 let new_entry_name = if name == old_base || name == format!("{}/", old_base) {
                     if name.ends_with('/') { format!("{}/", new_base) } else { new_base.clone() }
                 } else if name.starts_with(&format!("{}/", old_base)) {
                     let rest = &name[old_base.len()..];
                     format!("{}{}", new_base, rest)
                 } else {
-                    // Değişmeyecek — raw copy
                     let raw = src_archive.by_index_raw(i).map_err(|e| e.to_string())?;
                     dst_zip.raw_copy_file(raw).map_err(|e| e.to_string())?;
                     continue;
                 };
 
-                // Yeniden adlandırılacak entry'yi oku ve yaz
-                let mut entry = src_archive.by_index(i).map_err(|e| e.to_string())?;
-                if entry.is_dir() {
-                    dst_zip.add_directory(&new_entry_name, SimpleFileOptions::default()).map_err(|e| e.to_string())?;
+                if is_enc {
+                    if let Some(ref pw) = archive_password {
+                        let mut entry = src_archive.by_index_decrypt(i, pw.as_bytes()).map_err(|e| e.to_string())?;
+                        if entry.is_dir() {
+                            dst_zip.add_directory(&new_entry_name, SimpleFileOptions::default()).map_err(|e| e.to_string())?;
+                        } else {
+                            let mut buf = Vec::new();
+                            io::copy(&mut entry, &mut buf).map_err(|e| e.to_string())?;
+                            let opts = SimpleFileOptions::default().compression_method(CompressionMethod::Deflated).with_aes_encryption(zip::AesMode::Aes256, pw);
+                            dst_zip.start_file(&new_entry_name, opts).map_err(|e| e.to_string())?;
+                            dst_zip.write_all(&buf).map_err(|e| e.to_string())?;
+                        }
+                    } else {
+                        let raw = src_archive.by_index_raw(i).map_err(|e| e.to_string())?;
+                        dst_zip.raw_copy_file(raw).map_err(|e| e.to_string())?;
+                    }
                 } else {
-                    let opts = SimpleFileOptions::default().compression_method(CompressionMethod::Deflated);
-                    dst_zip.start_file(&new_entry_name, opts).map_err(|e| e.to_string())?;
-                    let mut buf = Vec::new();
-                    io::copy(&mut entry, &mut buf).map_err(|e| e.to_string())?;
-                    dst_zip.write_all(&buf).map_err(|e| e.to_string())?;
+                    let mut entry = src_archive.by_index(i).map_err(|e| e.to_string())?;
+                    if entry.is_dir() {
+                        dst_zip.add_directory(&new_entry_name, SimpleFileOptions::default()).map_err(|e| e.to_string())?;
+                    } else {
+                        let opts = SimpleFileOptions::default().compression_method(CompressionMethod::Deflated);
+                        dst_zip.start_file(&new_entry_name, opts).map_err(|e| e.to_string())?;
+                        let mut buf = Vec::new();
+                        io::copy(&mut entry, &mut buf).map_err(|e| e.to_string())?;
+                        dst_zip.write_all(&buf).map_err(|e| e.to_string())?;
+                    }
                 }
             }
             dst_zip.finish().map_err(|e| e.to_string())?;
@@ -439,7 +477,7 @@ pub async fn rename_in_zip(zip_path: String, old_path: String, new_name: String)
 }
 
 #[tauri::command]
-pub async fn move_in_zip(zip_path: String, src_path: String, dest_folder: String) -> Result<(), String> {
+pub async fn move_in_zip(zip_path: String, src_path: String, dest_folder: String, archive_password: Option<String>) -> Result<(), String> {
     task::spawn_blocking(move || {
         let tmp_path = zip_path.clone() + ".tmp";
         {
@@ -457,9 +495,9 @@ pub async fn move_in_zip(zip_path: String, src_path: String, dest_folder: String
             };
 
             for i in 0..src_archive.len() {
-                let name = {
+                let (name, is_enc) = {
                     let e = src_archive.by_index_raw(i).map_err(|e| e.to_string())?;
-                    e.name().to_string()
+                    (e.name().to_string(), e.encrypted())
                 };
 
                 let new_name = if name == src_base || name == format!("{}/", src_base) {
@@ -473,14 +511,32 @@ pub async fn move_in_zip(zip_path: String, src_path: String, dest_folder: String
                     continue;
                 };
 
-                let mut real = src_archive.by_index(i).map_err(|e| e.to_string())?;
-                if real.is_dir() {
-                    dst_zip.add_directory(&new_name, SimpleFileOptions::default()).map_err(|e| e.to_string())?;
+                if is_enc {
+                    if let Some(ref pw) = archive_password {
+                        let mut entry = src_archive.by_index_decrypt(i, pw.as_bytes()).map_err(|e| e.to_string())?;
+                        if entry.is_dir() {
+                            dst_zip.add_directory(&new_name, SimpleFileOptions::default()).map_err(|e| e.to_string())?;
+                        } else {
+                            let mut buf = Vec::new();
+                            io::copy(&mut entry, &mut buf).map_err(|e| e.to_string())?;
+                            let opts = SimpleFileOptions::default().compression_method(CompressionMethod::Deflated).with_aes_encryption(zip::AesMode::Aes256, pw);
+                            dst_zip.start_file(&new_name, opts).map_err(|e| e.to_string())?;
+                            dst_zip.write_all(&buf).map_err(|e| e.to_string())?;
+                        }
+                    } else {
+                        let raw = src_archive.by_index_raw(i).map_err(|e| e.to_string())?;
+                        dst_zip.raw_copy_file(raw).map_err(|e| e.to_string())?;
+                    }
                 } else {
-                    dst_zip.start_file(&new_name, SimpleFileOptions::default().compression_method(CompressionMethod::Deflated)).map_err(|e| e.to_string())?;
-                    let mut buf = Vec::new();
-                    io::copy(&mut real, &mut buf).map_err(|e| e.to_string())?;
-                    dst_zip.write_all(&buf).map_err(|e| e.to_string())?;
+                    let mut real = src_archive.by_index(i).map_err(|e| e.to_string())?;
+                    if real.is_dir() {
+                        dst_zip.add_directory(&new_name, SimpleFileOptions::default()).map_err(|e| e.to_string())?;
+                    } else {
+                        dst_zip.start_file(&new_name, SimpleFileOptions::default().compression_method(CompressionMethod::Deflated)).map_err(|e| e.to_string())?;
+                        let mut buf = Vec::new();
+                        io::copy(&mut real, &mut buf).map_err(|e| e.to_string())?;
+                        dst_zip.write_all(&buf).map_err(|e| e.to_string())?;
+                    }
                 }
             }
             dst_zip.finish().map_err(|e| e.to_string())?;
@@ -490,9 +546,8 @@ pub async fn move_in_zip(zip_path: String, src_path: String, dest_folder: String
     }).await.map_err(|e| e.to_string())?
 }
 
-// Kopyala: src_path'i dest_folder'a kopyalar (orijinal kalır)
 #[tauri::command]
-pub async fn copy_in_zip(zip_path: String, src_path: String, dest_folder: String) -> Result<(), String> {
+pub async fn copy_in_zip(zip_path: String, src_path: String, dest_folder: String, archive_password: Option<String>) -> Result<(), String> {
     task::spawn_blocking(move || {
         let tmp_path = zip_path.clone() + ".tmp";
         {
@@ -509,17 +564,15 @@ pub async fn copy_in_zip(zip_path: String, src_path: String, dest_folder: String
                 format!("{}/{}", dest_folder.trim_end_matches('/'), file_name)
             };
 
-            // Önce tüm mevcut entry'leri raw copy et
             for i in 0..src_archive.len() {
                 let raw = src_archive.by_index_raw(i).map_err(|e| e.to_string())?;
                 dst_zip.raw_copy_file(raw).map_err(|e| e.to_string())?;
             }
 
-            // Sonra kopyalanacak entry'leri yeni isimle ekle
             for i in 0..src_archive.len() {
-                let name = {
+                let (name, is_enc) = {
                     let e = src_archive.by_index_raw(i).map_err(|e| e.to_string())?;
-                    e.name().to_string()
+                    (e.name().to_string(), e.encrypted())
                 };
 
                 let new_name = if name == src_base || name == format!("{}/", src_base) {
@@ -531,14 +584,32 @@ pub async fn copy_in_zip(zip_path: String, src_path: String, dest_folder: String
                     continue;
                 };
 
-                let mut real = src_archive.by_index(i).map_err(|e| e.to_string())?;
-                if real.is_dir() {
-                    dst_zip.add_directory(&new_name, SimpleFileOptions::default()).map_err(|e| e.to_string())?;
+                if is_enc {
+                    if let Some(ref pw) = archive_password {
+                        let mut entry = src_archive.by_index_decrypt(i, pw.as_bytes()).map_err(|e| e.to_string())?;
+                        if entry.is_dir() {
+                            dst_zip.add_directory(&new_name, SimpleFileOptions::default()).map_err(|e| e.to_string())?;
+                        } else {
+                            let mut buf = Vec::new();
+                            io::copy(&mut entry, &mut buf).map_err(|e| e.to_string())?;
+                            let opts = SimpleFileOptions::default().compression_method(CompressionMethod::Deflated).with_aes_encryption(zip::AesMode::Aes256, pw);
+                            dst_zip.start_file(&new_name, opts).map_err(|e| e.to_string())?;
+                            dst_zip.write_all(&buf).map_err(|e| e.to_string())?;
+                        }
+                    } else {
+                        let raw = src_archive.by_index_raw(i).map_err(|e| e.to_string())?;
+                        dst_zip.raw_copy_file(raw).map_err(|e| e.to_string())?;
+                    }
                 } else {
-                    dst_zip.start_file(&new_name, SimpleFileOptions::default().compression_method(CompressionMethod::Deflated)).map_err(|e| e.to_string())?;
-                    let mut buf = Vec::new();
-                    io::copy(&mut real, &mut buf).map_err(|e| e.to_string())?;
-                    dst_zip.write_all(&buf).map_err(|e| e.to_string())?;
+                    let mut real = src_archive.by_index(i).map_err(|e| e.to_string())?;
+                    if real.is_dir() {
+                        dst_zip.add_directory(&new_name, SimpleFileOptions::default()).map_err(|e| e.to_string())?;
+                    } else {
+                        dst_zip.start_file(&new_name, SimpleFileOptions::default().compression_method(CompressionMethod::Deflated)).map_err(|e| e.to_string())?;
+                        let mut buf = Vec::new();
+                        io::copy(&mut real, &mut buf).map_err(|e| e.to_string())?;
+                        dst_zip.write_all(&buf).map_err(|e| e.to_string())?;
+                    }
                 }
             }
             dst_zip.finish().map_err(|e| e.to_string())?;
