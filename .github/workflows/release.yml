@@ -46,15 +46,15 @@ jobs:
       - name: Build Inno Setup installer
         run: ISCC.exe installer\ruzip_setup.iss
 
-      - uses: ncipollo/release-action@v1
-        with:
-          tag: ${{ env.TAG }}
-          artifacts: "src-tauri/target/release/bundle/msi/*.msi,release/RuZip_Setup_*.exe,src-tauri/target/release/RuZip.exe"
-          allowUpdates: true
-          replacesArtifacts: true
-          omitBodyDuringUpdate: true
-          omitNameDuringUpdate: true
-          token: ${{ github.token }}
+      - name: Upload to Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "$env:TAG"
+          gh release create $tag --title "RuZip $tag" --notes "" 2>$null
+          gh release view $tag --json assets --jq '.assets[].name' 2>$null | ForEach-Object { gh release delete-asset $tag $_ --yes 2>$null }
+          Get-ChildItem src-tauri/target/release/bundle/msi/*.msi, release/RuZip_Setup_*.exe, src-tauri/target/release/RuZip.exe -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "Uploading $($_.FullName)..."; gh release upload $tag $_.FullName }
 
   build-linux:
     runs-on: ubuntu-latest
@@ -82,15 +82,12 @@ jobs:
       - name: Build (Linux x64)
         run: npm run tauri build
 
-      - uses: ncipollo/release-action@v1
-        with:
-          tag: ${{ env.TAG }}
-          artifacts: "src-tauri/target/release/bundle/appimage/*.AppImage,src-tauri/target/release/bundle/deb/*.deb"
-          allowUpdates: true
-          replacesArtifacts: true
-          omitBodyDuringUpdate: true
-          omitNameDuringUpdate: true
-          token: ${{ github.token }}
+      - name: Upload to Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$TAG" --json assets --jq '.assets[].name' | while read -r name; do gh release delete-asset "$TAG" "$name" --yes; done 2>/dev/null || true
+          for f in src-tauri/target/release/bundle/appimage/*.AppImage src-tauri/target/release/bundle/deb/*.deb; do [ -f "$f" ] || continue; echo "Uploading $f..."; gh release upload "$TAG" "$f"; done
 
   build-macos:
     runs-on: macos-latest
@@ -113,12 +110,9 @@ jobs:
       - name: Build (macOS x64)
         run: npm run tauri build
 
-      - uses: ncipollo/release-action@v1
-        with:
-          tag: ${{ env.TAG }}
-          artifacts: "src-tauri/target/release/bundle/dmg/*.dmg"
-          allowUpdates: true
-          replacesArtifacts: true
-          omitBodyDuringUpdate: true
-          omitNameDuringUpdate: true
-          token: ${{ github.token }}
+      - name: Upload to Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$TAG" --json assets --jq '.assets[].name' | while read -r name; do gh release delete-asset "$TAG" "$name" --yes; done 2>/dev/null || true
+          for f in src-tauri/target/release/bundle/dmg/*.dmg; do [ -f "$f" ] || continue; echo "Uploading $f..."; gh release upload "$TAG" "$f"; done
