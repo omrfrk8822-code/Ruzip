@@ -16,6 +16,8 @@ src-tauri/target/
 src-tauri/icons/android/
 src-tauri/icons/ios/
 *.local
+geçici.txt
+gecici.txt
 
 # Editor directories and files
 .vscode/*
