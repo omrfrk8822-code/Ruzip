@@ -52,7 +52,8 @@ jobs:
           artifacts: "src-tauri/target/release/bundle/msi/*.msi,release/RuZip_Setup_*.exe,src-tauri/target/release/RuZip.exe"
           allowUpdates: true
           replacesArtifacts: true
-          generateReleaseNotes: true
+          omitBodyDuringUpdate: true
+          omitNameDuringUpdate: true
           token: ${{ github.token }}
 
   build-linux:
