@@ -6,7 +6,7 @@
   Tauri v2 + React + TypeScript + Rust ile geliştirilmiş, yerli ve açık kaynaklı masaüstü ZIP arşivleyici.  
   Catppuccin Mocha dark tema, Türkçe arayüz.
 
-  **Sürüm:** `0.1.0` — © 2026
+  **Sürüm:** `0.1.1` — © 2026
 
   [![License: MIT](https://img.shields.io/badge/Lisans-MIT-blue.svg)](LICENSE)
   [![Tauri](https://img.shields.io/badge/Tauri-v2-orange.svg)](https://tauri.app)
