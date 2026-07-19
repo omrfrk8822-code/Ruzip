@@ -18,8 +18,6 @@ env:
 jobs:
   build-windows:
     runs-on: windows-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -46,20 +44,17 @@ jobs:
       - name: Build Inno Setup installer
         run: ISCC.exe installer\ruzip_setup.iss
 
-      - name: Upload to Release
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          $tag = "$env:TAG"
-          gh release create $tag --title "RuZip $tag" --notes "" 2>$null
-          gh release view $tag --json assets --jq '.assets[].name' 2>$null | ForEach-Object { gh release delete-asset $tag $_ --yes 2>$null }
-          Get-ChildItem src-tauri/target/release/bundle/msi/*.msi, release/RuZip_Setup_*.exe, src-tauri/target/release/RuZip.exe -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "Uploading $($_.FullName)..."; gh release upload $tag $_.FullName }
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-assets
+          path: |
+            src-tauri/target/release/bundle/msi/*.msi
+            release/RuZip_Setup_*.exe
+            src-tauri/target/release/RuZip.exe
 
   build-linux:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -82,18 +77,16 @@ jobs:
       - name: Build (Linux x64)
         run: npm run tauri build
 
-      - name: Upload to Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release create "$TAG" --title "RuZip $TAG" --notes "" 2>/dev/null || true
-          gh release view "$TAG" --json assets --jq '.assets[].name' | while read -r name; do gh release delete-asset "$TAG" "$name" --yes; done 2>/dev/null || true
-          for f in src-tauri/target/release/bundle/appimage/*.AppImage src-tauri/target/release/bundle/deb/*.deb; do [ -f "$f" ] || continue; echo "Uploading $f..."; gh release upload "$TAG" "$f"; done
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-assets
+          path: |
+            src-tauri/target/release/bundle/appimage/*.AppImage
+            src-tauri/target/release/bundle/deb/*.deb
 
   build-macos:
     runs-on: macos-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -111,10 +104,42 @@ jobs:
       - name: Build (macOS x64)
         run: npm run tauri build
 
-      - name: Upload to Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release create "$TAG" --title "RuZip $TAG" --notes "" 2>/dev/null || true
-          gh release view "$TAG" --json assets --jq '.assets[].name' | while read -r name; do gh release delete-asset "$TAG" "$name" --yes; done 2>/dev/null || true
-          for f in src-tauri/target/release/bundle/dmg/*.dmg; do [ -f "$f" ] || continue; echo "Uploading $f..."; gh release upload "$TAG" "$f"; done
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-assets
+          path: src-tauri/target/release/bundle/dmg/*.dmg
+
+  release:
+    needs: [build-windows, build-linux, build-macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-assets
+          path: assets/windows
+
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-assets
+          path: assets/linux
+
+      - name: Download macOS artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-assets
+          path: assets/macos
+
+      - name: Create Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "assets/**/*"
+          tag: ${{ env.TAG }}
+          name: "RuZip ${{ env.TAG }}"
+          body: "RuZip ${{ env.TAG }} sürümü yayında! 🎉"
+          allowUpdates: true
+          replacesArtifacts: true
