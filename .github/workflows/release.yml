@@ -118,6 +118,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Delete existing release and tag (if exists)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "Checking for existing release: ${{ env.TAG }}"
+          gh release delete "${{ env.TAG }}" --yes 2>/dev/null || echo "No existing release to delete"
+          gh api --method DELETE /repos/${{ github.repository }}/git/refs/tags/${{ env.TAG }} 2>/dev/null || echo "No existing tag to delete"
+
       - name: Download Windows artifacts
         uses: actions/download-artifact@v4
         with:

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 
-export const APP_VERSION = '0.1.1';
+export const APP_VERSION = '0.1.2';
 export const APP_BUILD = '20260719';
 export const GITHUB_URL = 'https://github.com/omrfrk8822-code/Ruzip';
 export const DEVELOPER_URL = 'https://github.com/oemerfarukozturk';
@@ -17,12 +17,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.1.2',
+    date: '19 Temmuz 2026',
+    type: 'patch',
+    fixed: [
+      'CI pipeline tamamen kararlı hale getirildi (asset upload, release job)',
+      'Tag koruma sorunu çözüldü, temiz sürüm yönetimi',
+    ],
+  },
+  {
     version: '0.1.1',
     date: '19 Temmuz 2026',
     type: 'patch',
     fixed: [
       'Inno Setup kurulumunda RegCreateKeyEx Access Denied hatası giderildi (HKCU kullanıldı)',
-      'CI pipeline kararlı hale getirildi (workflow_dispatch, asset overwrite)',
     ],
   },
   {
