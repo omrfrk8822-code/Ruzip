@@ -17,15 +17,15 @@
 
 ## 📥 İndir
 
-Son sürüm: **v0.1.0**
+Son sürüm: **v0.1.1**
 
 ### 🪟 Windows
 
 | Tip | Açıklama | İndir |
 |-----|----------|-------|
-| 🏠 Inno Setup | Önerilen. Sağ tık menüsü + dosya ilişkilendirme dahil | [RuZip_Setup_0.1.0.exe](https://github.com/omrfrk8822-code/Ruzip/releases/download/v0.1.0/RuZip_Setup_0.1.0.exe) |
-| 📦 MSI | Wix MSI kurulum | [RuZip_0.1.0_x64_tr-TR.msi](https://github.com/omrfrk8822-code/Ruzip/releases/download/v0.1.0/RuZip_0.1.0_x64_tr-TR.msi) |
-| 🧳 Portable | Taşınabilir, kurulum gerekmez | [RuZip.exe](https://github.com/omrfrk8822-code/Ruzip/releases/download/v0.1.0/RuZip.exe) |
+| 🏠 Inno Setup | Önerilen. Sağ tık menüsü + dosya ilişkilendirme dahil | [RuZip_Setup_0.1.1.exe](https://github.com/omrfrk8822-code/Ruzip/releases/download/v0.1.1/RuZip_Setup_0.1.1.exe) |
+| 📦 MSI | Wix MSI kurulum | [RuZip_0.1.1_x64_tr-TR.msi](https://github.com/omrfrk8822-code/Ruzip/releases/download/v0.1.1/RuZip_0.1.1_x64_tr-TR.msi) |
+| 🧳 Portable | Taşınabilir, kurulum gerekmez | [RuZip.exe](https://github.com/omrfrk8822-code/Ruzip/releases/download/v0.1.1/RuZip.exe) |
 
 > ⚠️ **Windows Güvenlik Uyarısı:** İmzasız bir uygulama olduğu için Windows "Windows cihazını korudu" uyarısı gösterebilir. **"Yine de çalıştır"** butonuna tıklayarak güvenle kullanabilirsiniz.
 
@@ -33,14 +33,14 @@ Son sürüm: **v0.1.0**
 
 | Tip | Dağıtım | İndir |
 |-----|---------|-------|
-| 📦 AppImage | Tüm dağıtımlar (Ubuntu, Fedora, Arch, vb.) | [RuZip_0.1.0_amd64.AppImage](https://github.com/omrfrk8822-code/Ruzip/releases/download/v0.1.0/RuZip_0.1.0_amd64.AppImage) |
-| 📦 deb | Ubuntu, Debian, Mint, Pop!_OS | [RuZip_0.1.0_amd64.deb](https://github.com/omrfrk8822-code/Ruzip/releases/download/v0.1.0/RuZip_0.1.0_amd64.deb) |
+| 📦 AppImage | Tüm dağıtımlar (Ubuntu, Fedora, Arch, vb.) | [RuZip_0.1.1_amd64.AppImage](https://github.com/omrfrk8822-code/Ruzip/releases/download/v0.1.1/RuZip_0.1.1_amd64.AppImage) |
+| 📦 deb | Ubuntu, Debian, Mint, Pop!_OS | [RuZip_0.1.1_amd64.deb](https://github.com/omrfrk8822-code/Ruzip/releases/download/v0.1.1/RuZip_0.1.1_amd64.deb) |
 
 ### 🍎 macOS
 
 | Tip | İşlemci | İndir |
 |-----|---------|-------|
-| 📦 DMG | Apple Silicon (M1, M2, M3, M4) | [RuZip_0.1.0_aarch64.dmg](https://github.com/omrfrk8822-code/Ruzip/releases/download/v0.1.0/RuZip_0.1.0_aarch64.dmg) |
+| 📦 DMG | Apple Silicon (M1, M2, M3, M4) | [RuZip_0.1.1_aarch64.dmg](https://github.com/omrfrk8822-code/Ruzip/releases/download/v0.1.1/RuZip_0.1.1_aarch64.dmg) |
 | 📦 DMG | Intel (x86_64) | CI'da üretilecek — şimdilik kaynak koddan derleyin |
 
 > 💡 Tüm sürümler ve geçmiş dosyalar için: [Releases sayfası](https://github.com/omrfrk8822-code/Ruzip/releases)
