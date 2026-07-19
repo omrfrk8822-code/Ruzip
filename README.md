@@ -6,7 +6,7 @@
   Tauri v2 + React + TypeScript + Rust ile geliştirilmiş, yerli ve açık kaynaklı masaüstü ZIP arşivleyici.  
   Catppuccin Mocha dark tema, Türkçe arayüz.
 
-  **Sürüm:** `0.1.2` — © 2026
+  **Sürüm:** `0.1.3` — © 2026
 
   [![License: MIT](https://img.shields.io/badge/Lisans-MIT-blue.svg)](LICENSE)
   [![Tauri](https://img.shields.io/badge/Tauri-v2-orange.svg)](https://tauri.app)
@@ -17,15 +17,15 @@
 
 ## 📥 İndir
 
-Son sürüm: **v0.1.2**
+Son sürüm: **v0.1.3**
 
 ### 🪟 Windows
 
 | Tip | Açıklama | İndir |
 |-----|----------|-------|
-| 🏠 Inno Setup | Önerilen. Sağ tık menüsü + dosya ilişkilendirme dahil | [RuZip_Setup_0.1.2.exe](https://github.com/omrfrk8822-code/Ruzip/releases/download/v0.1.2/RuZip_Setup_0.1.2.exe) |
-| 📦 MSI | Wix MSI kurulum | [RuZip_0.1.2_x64_tr-TR.msi](https://github.com/omrfrk8822-code/Ruzip/releases/download/v0.1.2/RuZip_0.1.2_x64_tr-TR.msi) |
-| 🧳 Portable | Taşınabilir, kurulum gerekmez | [RuZip.exe](https://github.com/omrfrk8822-code/Ruzip/releases/download/v0.1.2/RuZip.exe) |
+| 🏠 Inno Setup | Önerilen. Sağ tık menüsü + dosya ilişkilendirme dahil | [RuZip_Setup_0.1.3.exe](https://github.com/omrfrk8822-code/Ruzip/releases/download/v0.1.3/RuZip_Setup_0.1.3.exe) |
+| 📦 MSI | Wix MSI kurulum | [RuZip_0.1.3_x64_tr-TR.msi](https://github.com/omrfrk8822-code/Ruzip/releases/download/v0.1.3/RuZip_0.1.3_x64_tr-TR.msi) |
+| 🧳 Portable | Taşınabilir, kurulum gerekmez | [RuZip.exe](https://github.com/omrfrk8822-code/Ruzip/releases/download/v0.1.3/RuZip.exe) |
 
 > ⚠️ **Windows Güvenlik Uyarısı:** İmzasız bir uygulama olduğu için Windows "Windows cihazını korudu" uyarısı gösterebilir. **"Yine de çalıştır"** butonuna tıklayarak güvenle kullanabilirsiniz.
 
@@ -33,14 +33,14 @@ Son sürüm: **v0.1.2**
 
 | Tip | Dağıtım | İndir |
 |-----|---------|-------|
-| 📦 AppImage | Tüm dağıtımlar (Ubuntu, Fedora, Arch, vb.) | [RuZip_0.1.2_amd64.AppImage](https://github.com/omrfrk8822-code/Ruzip/releases/download/v0.1.2/RuZip_0.1.2_amd64.AppImage) |
-| 📦 deb | Ubuntu, Debian, Mint, Pop!_OS | [RuZip_0.1.2_amd64.deb](https://github.com/omrfrk8822-code/Ruzip/releases/download/v0.1.2/RuZip_0.1.2_amd64.deb) |
+| 📦 AppImage | Tüm dağıtımlar (Ubuntu, Fedora, Arch, vb.) | [RuZip_0.1.3_amd64.AppImage](https://github.com/omrfrk8822-code/Ruzip/releases/download/v0.1.3/RuZip_0.1.3_amd64.AppImage) |
+| 📦 deb | Ubuntu, Debian, Mint, Pop!_OS | [RuZip_0.1.3_amd64.deb](https://github.com/omrfrk8822-code/Ruzip/releases/download/v0.1.3/RuZip_0.1.3_amd64.deb) |
 
 ### 🍎 macOS
 
 | Tip | İşlemci | İndir |
 |-----|---------|-------|
-| 📦 DMG | Apple Silicon (M1, M2, M3, M4) | [RuZip_0.1.2_aarch64.dmg](https://github.com/omrfrk8822-code/Ruzip/releases/download/v0.1.2/RuZip_0.1.2_aarch64.dmg) |
+| 📦 DMG | Apple Silicon (M1, M2, M3, M4) | [RuZip_0.1.3_aarch64.dmg](https://github.com/omrfrk8822-code/Ruzip/releases/download/v0.1.3/RuZip_0.1.3_aarch64.dmg) |
 | 📦 DMG | Intel (x86_64) | CI'da üretilecek — şimdilik kaynak koddan derleyin |
 
 > 💡 Tüm sürümler ve geçmiş dosyalar için: [Releases sayfası](https://github.com/omrfrk8822-code/Ruzip/releases)
