@@ -46,6 +46,13 @@ jobs:
       - name: Build Inno Setup installer
         run: ISCC.exe installer\ruzip_setup.iss
 
+      - name: Delete old Windows assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $assets = gh release view $env:TAG --json assets --jq '.assets[].name' 2>$null
+          if ($assets) { $assets | Select-String -Pattern '\.msi$|^RuZip\.exe$|^RuZip_Setup_' | ForEach-Object { Write-Host "Deleting $_..."; gh release delete-asset $env:TAG $_ --yes 2>$null } }
+
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
         with:
@@ -83,6 +90,12 @@ jobs:
       - name: Build (Linux x64)
         run: npm run tauri build
 
+      - name: Delete old Linux assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$TAG" --json assets --jq '.assets[].name' | grep -E '\.(AppImage|deb)$' | while read -r asset; do echo "Deleting $asset..."; gh release delete-asset "$TAG" "$asset" --yes; done || true
+
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
         with:
@@ -112,6 +125,12 @@ jobs:
 
       - name: Build (macOS x64)
         run: npm run tauri build
+
+      - name: Delete old macOS assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$TAG" --json assets --jq '.assets[].name' | grep -E '\.dmg$' | while read -r asset; do echo "Deleting $asset..."; gh release delete-asset "$TAG" "$asset" --yes; done || true
 
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
