@@ -11,8 +11,19 @@
   [![License: MIT](https://img.shields.io/badge/Lisans-MIT-blue.svg)](LICENSE)
   [![Tauri](https://img.shields.io/badge/Tauri-v2-orange.svg)](https://tauri.app)
   [![Rust](https://img.shields.io/badge/Rust-stable-red.svg)](https://www.rust-lang.org)
-  [![Download](https://img.shields.io/badge/İndir-v0.1.0-brightgreen)](https://github.com/omrfrk8822-code/Ruzip/releases/latest/download/RuZip_Setup_0.1.0.exe)
 </div>
+
+---
+
+## 📥 Hızlı İndir
+
+| Platform | Kurulum Dosyası |
+|----------|----------------|
+| 🪟 Windows | [RuZip_Setup_0.1.0.exe](https://github.com/omrfrk8822-code/Ruzip/releases/download/v0.1.0/RuZip_Setup_0.1.0.exe) |
+| 🐧 Linux | [RuZip_0.1.0_amd64.AppImage](https://github.com/omrfrk8822-code/Ruzip/releases/download/v0.1.0/RuZip_0.1.0_amd64.AppImage) |
+| 🍎 macOS | [RuZip_0.1.0_aarch64.dmg](https://github.com/omrfrk8822-code/Ruzip/releases/download/v0.1.0/RuZip_0.1.0_aarch64.dmg) |
+
+Tüm sürümler ve dosyalar için [Releases sayfası](https://github.com/omrfrk8822-code/Ruzip/releases).
 
 ---
 
@@ -319,4 +330,6 @@ React Progress Listener → UI
 
 ## Lisans
 
-MIT © 2026 RuZip Katkıda Bulunanlar
+Bu proje [MIT Lisansı](LICENSE) altında lisanslanmıştır.  
+Kodu kullanabilir, değiştirebilir ve dağıtabilirsiniz — yeter ki orijinal telif hakkı bildirimini koruyun.  
+Kısaca: **kullan, geliştir, paylaş — ama emeğe saygı duy.**
