@@ -138,13 +138,20 @@ pub async fn create_folder_in_zip(zip_path: String, folder_name: String) -> Resu
         {
             let src = File::open(&zip_path).map_err(|e| e.to_string())?;
             let mut src_archive = ZipArchive::new(src).map_err(|e| e.to_string())?;
+            let normalized = if folder_name.ends_with('/') { folder_name.clone() } else { folder_name.clone() + "/" };
+            // Çakışma kontrolü
+            for i in 0..src_archive.len() {
+                let name = src_archive.by_index_raw(i).map_err(|e| e.to_string())?.name().to_string();
+                if name == normalized || name == folder_name {
+                    return Err(format!("CONFLICT:{}", folder_name));
+                }
+            }
             let dst = File::create(&tmp_path).map_err(|e| e.to_string())?;
             let mut dst_zip = ZipWriter::new(dst);
             for i in 0..src_archive.len() {
                 dst_zip.raw_copy_file(src_archive.by_index_raw(i).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
             }
-            let name = if folder_name.ends_with('/') { folder_name.clone() } else { folder_name.clone() + "/" };
-            dst_zip.add_directory(&name, SimpleFileOptions::default()).map_err(|e| e.to_string())?;
+            dst_zip.add_directory(&normalized, SimpleFileOptions::default()).map_err(|e| e.to_string())?;
             dst_zip.finish().map_err(|e| e.to_string())?;
         }
         fs::rename(&tmp_path, &zip_path).map_err(|e| e.to_string())?;

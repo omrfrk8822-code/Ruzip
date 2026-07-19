@@ -16,12 +16,16 @@ interface ProgressEvt { current: number; total: number; file: string; cancelled:
 interface TestResult { ok: boolean; message: string; details: string[]; }
 
 type ModalType = 'progress' | 'test' | 'newfolder' | 'rename' | 'confirm' | 'error';
-interface ModalState {
+interface ModalBaseState {
   type: ModalType;
   title?: string;
   message?: string;
-  resolve?: (val: string | null) => void;
 }
+type ModalState =
+  | (ModalBaseState & { type: 'progress' | 'test' | 'newfolder' })
+  | (ModalBaseState & { type: 'confirm'; resolve: (val: boolean) => void })
+  | (ModalBaseState & { type: 'error'; resolve: (val: null) => void })
+  | (ModalBaseState & { type: 'rename'; resolve: (val: string | null) => void });
 
 export default function App() {
   const [archivePath, setArchivePath] = useState('');
@@ -44,11 +48,11 @@ export default function App() {
 
   const showStatus = (msg: string) => { setStatus(msg); setTimeout(() => setStatus(''), 3000); };
 
-  const showConfirm = (title: string, msg: string): Promise<string | null> =>
+  const showConfirm = (title: string, msg: string): Promise<boolean> =>
     new Promise(resolve => { setModal({ type: 'confirm', title, message: msg, resolve }); });
 
   const showError = (msg: string) =>
-    new Promise<string | null>(resolve => { setModal({ type: 'error', title: 'Hata', message: msg, resolve }); });
+    new Promise<null>(resolve => { setModal({ type: 'error', title: 'Hata', message: msg, resolve }); });
 
   const askRename = (current: string): Promise<string | null> =>
     new Promise(resolve => { setModalInput(current); setModal({ type: 'rename', title: 'Yeniden Adlandır', resolve }); });
@@ -117,13 +121,23 @@ export default function App() {
 
   useEffect(() => {
     const blockKeys = (e: KeyboardEvent) => {
-      if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key))) e.preventDefault();
+      const key = e.key.toLowerCase();
+      const blocked = (
+        e.key === 'F5' ||
+        e.key === 'F12' ||
+        (e.ctrlKey && key === 'r') ||
+        (e.ctrlKey && e.shiftKey && ['i', 'j', 'c', 'r'].includes(key))
+      );
+      if (blocked) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
     };
     const closeCtx = () => setContextMenu(null);
-    window.addEventListener('keydown', blockKeys);
+    window.addEventListener('keydown', blockKeys, true);
     window.addEventListener('click', closeCtx);
     return () => {
-      window.removeEventListener('keydown', blockKeys);
+      window.removeEventListener('keydown', blockKeys, true);
       window.removeEventListener('click', closeCtx);
     };
   }, []);
@@ -222,18 +236,10 @@ export default function App() {
     if (!archivePath || selected.size === 0) return;
     const yes = await showConfirm('Sil', `${selected.size} öğe kalıcı olarak silinsin mi?`);
     if (!yes) return;
-    const willBeEmpty = allEntries.length === selected.size;
     try {
       await invoke('delete_from_zip', { zipPath: archivePath, entriesToDelete: Array.from(selected) });
       setSelected(new Set());
       setCheckMode(false);
-      if (willBeEmpty) {
-        setArchivePath('');
-        setAllEntries([]);
-        setTotalSize(0);
-        setTotalCompressed(0);
-        return;
-      }
       await loadArchive(archivePath);
       showStatus('Silindi.');
     } catch (e: any) { if (String(e) !== 'İptal edildi') await showError(String(e)); }
@@ -381,8 +387,20 @@ export default function App() {
     await invoke('cancel_operation');
   };
 
-  const confirmModal = () => { modal?.resolve?.(modalInput); setModal(null); };
-  const cancelModal = () => { modal?.resolve?.(null); setModal(null); };
+  const confirmModal = () => {
+    if (!modal) return;
+    if (modal.type === 'confirm') modal.resolve(true);
+    else if (modal.type === 'error') modal.resolve(null);
+    else if (modal.type === 'rename') modal.resolve(modalInput);
+    setModal(null);
+  };
+  const cancelModal = () => {
+    if (!modal) return;
+    if (modal.type === 'confirm') modal.resolve(false);
+    else if (modal.type === 'error') modal.resolve(null);
+    else if (modal.type === 'rename') modal.resolve(null);
+    setModal(null);
+  };
 
   const progressPct = progress && progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0;
 
@@ -450,10 +468,7 @@ export default function App() {
         />
       ) : (
         <div className={`dropzone ${dragOver ? 'drag-over' : ''}`}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
-            <path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
-            <path d="M12 11v6m-3-3l3 3 3-3" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <img src="/ruzip_icon.png" alt="RuZip" className="dropzone-logo" />
           <h2>ZIP arşivi aç veya sürükle bırak</h2>
           <p>.zip dosyasını buraya sürükle</p>
           <button className="btn btn-primary" onClick={handleOpen} style={{ marginTop: 8 }}>Dosya Seç</button>
@@ -521,7 +536,7 @@ export default function App() {
         <Dialog kind="error" title="Hata"
           message={modal.message || 'Bir hata oluştu.'}
           confirmLabel="Tamam"
-          onConfirm={() => { modal?.resolve?.(null); setModal(null); }} />
+          onConfirm={confirmModal} />
       )}
       {modal?.type === 'rename' && (
         <Dialog kind="rename" title="Yeniden Adlandır"

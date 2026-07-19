@@ -25,6 +25,7 @@ pub fn run() {
             zip_folder,
             get_temp_dir,
             open_file,
+            open_url,
             cancel_operation,
         ])
         .run(tauri::generate_context!())

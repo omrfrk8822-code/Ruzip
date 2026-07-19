@@ -1,10 +1,11 @@
 ; RuZip Inno Setup Kurulum Scripti
 ; Derlemek için: iscc ruzip_setup.iss
+; Multi-arch: x64 ve ARM64 desteği
 
 #define AppName "RuZip"
 #define AppVersion "0.1.0"
 #define AppPublisher "RuZip"
-#define AppURL "https://github.com/ruzip/ruzip"
+#define AppURL "https://github.com/omrfrk8822-code/Ruzip"
 #define AppExeName "RuZip.exe"
 #define AppDescription "Türkiye'nin ZIP Arşiv Programı"
 
@@ -37,8 +38,7 @@ UninstallDisplayName={#AppName}
 VersionInfoVersion={#AppVersion}
 VersionInfoDescription={#AppDescription}
 VersionInfoProductName={#AppName}
-ArchitecturesAllowed=x64compatible
-ArchitecturesInstallIn64BitMode=x64compatible
+ArchitecturesInstallIn64BitMode=x64
 
 [Languages]
 Name: "turkish"; MessagesFile: "compiler:Languages\Turkish.isl"
@@ -53,9 +53,10 @@ Name: "shellmenu\extract"; Description: "Buraya çıkar / Klasöre çıkar";    
 Name: "shellmenu\add";     Description: "ZIP arşivine ekle / Klasörü zipple";   GroupDescription: "Kabuk entegrasyonu:"; Flags: checkedonce
 
 [Files]
-Source: "..\src-tauri\target\release\{#AppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\src-tauri\target\release\*.dll";         DestDir: "{app}"; Flags: ignoreversion recursesubdirs skipifsourcedoesntexist
-Source: "..\src-tauri\target\release\resources\*";   DestDir: "{app}\resources"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
+; x64 binary
+Source: "..\src-tauri\target\release\{#AppExeName}"; DestDir: "{app}"; Flags: ignoreversion; Check: Is64BitInstallMode and not IsARM64
+Source: "..\src-tauri\target\release\*.dll";         DestDir: "{app}"; Flags: ignoreversion recursesubdirs skipifsourcedoesntexist; Check: Is64BitInstallMode and not IsARM64
+Source: "..\src-tauri\target\release\resources\*";   DestDir: "{app}\resources"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist; Check: Is64BitInstallMode and not IsARM64
 
 [Icons]
 Name: "{group}\{#AppName}";          Filename: "{app}\{#AppExeName}"; Comment: "{#AppDescription}"
@@ -116,7 +117,7 @@ Root: HKCR; Subkey: "Directory\shell\ruzip_zip\command"; ValueType: string; Valu
 ; "Klasör içeriğini zipple" — boş alan sağ tık
 Root: HKCR; Subkey: "Directory\Background\shell\ruzip_zip";         ValueType: string; ValueName: "";     ValueData: "RuZip ile Zipple";          Flags: uninsdeletekey; Tasks: shellmenu\add
 Root: HKCR; Subkey: "Directory\Background\shell\ruzip_zip";         ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#AppExeName},0";     Tasks: shellmenu\add
-Root: HKCR; Subkey: "Directory\Background\shell\ruzip_zip\command"; ValueType: string; ValueName: "";     ValueData: """{app}\{#AppExeName}"" --zip-folder "%V""; Tasks: shellmenu\add
+Root: HKCR; Subkey: "Directory\Background\shell\ruzip_zip\command"; ValueType: string; ValueName: "";     ValueData: """{app}\{#AppExeName}"" --zip-folder %V"; Tasks: shellmenu\add
 
 ; ── Uygulama kaydı ────────────────────────────────────────────────────────
 Root: HKLM; Subkey: "Software\{#AppName}"; ValueType: string; ValueName: "InstallPath"; ValueData: "{app}"; Flags: uninsdeletekey
@@ -129,30 +130,15 @@ Filename: "{app}\{#AppExeName}"; Description: "{#AppName}'ı başlat"; Flags: no
 Type: filesandordirs; Name: "{app}"
 
 [Code]
-function IsWebView2Installed(): Boolean;
-var Version: String;
-begin
-  Result := RegQueryStringValue(HKLM, 'SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}', 'pv', Version)
-         or RegQueryStringValue(HKCU, 'Software\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}', 'pv', Version);
-end;
-
-function InitializeSetup(): Boolean;
-begin
-  Result := True;
-  if not IsWebView2Installed() then begin
-    if MsgBox('Microsoft WebView2 Runtime gereklidir.' + #13#10 + 'Şimdi indirmek ister misiniz?', mbConfirmation, MB_YESNO) = IDYES then begin
-      ShellExec('open', 'https://go.microsoft.com/fwlink/p/?LinkId=2124703', '', '', SW_SHOW, ewNoWait, 0);
-      Result := False;
-    end;
-  end;
-end;
+var
+  ResultCode: Integer;
 
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if CurStep = ssPostInstall then begin
-    if IsTaskSelected('fileassoc_zip') then begin
-      Exec('cmd.exe', '/c assoc .zip=RuZip.Archive', '', SW_HIDE, ewWaitUntilTerminated, 0);
-      Exec('cmd.exe', '/c ftype RuZip.Archive="{app}\{#AppExeName}" "%1"', '', SW_HIDE, ewWaitUntilTerminated, 0);
+    if WizardIsTaskSelected('fileassoc_zip') then begin
+      Exec('cmd.exe', '/c assoc .zip=RuZip.Archive', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+      Exec('cmd.exe', '/c ftype RuZip.Archive="{app}\{#AppExeName}" "%1"', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
     end;
   end;
 end;

@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "RuZip",
-  "version": "1.0.0",
-  "identifier": "com.ruzip.app",
+  "version": "0.1.0",
+  "identifier": "com.ruzip.desktop",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -13,9 +13,9 @@
     "windows": [
       {
         "title": "RuZip",
-        "width": 1100,
+        "width": 1200,
         "height": 700,
-        "minWidth": 800,
+        "minWidth": 1000,
         "minHeight": 500,
         "decorations": true,
         "center": true,

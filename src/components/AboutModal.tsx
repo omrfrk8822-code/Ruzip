@@ -1,9 +1,10 @@
 import { useState } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 
 export const APP_VERSION = '0.1.0';
-export const APP_BUILD = '20260101';
-export const GITHUB_URL = 'https://github.com/yourusername/ruzip';
-export const ISSUES_URL = 'https://github.com/yourusername/ruzip/issues';
+export const APP_BUILD = '20260719';
+export const GITHUB_URL = 'https://github.com/omrfrk8822-code/Ruzip';
+export const DEVELOPER_URL = 'https://github.com/oemerfarukozturk';
 
 export interface ChangelogEntry {
   version: string;
@@ -17,7 +18,7 @@ export interface ChangelogEntry {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '0.1.0',
-    date: '01 Ocak 2026',
+    date: '19 Temmuz 2026',
     type: 'minor',
     added: [
       'ZIP oluşturma, açma ve çıkarma',
@@ -77,6 +78,9 @@ interface Props { onClose: () => void; }
 
 export default function AboutModal({ onClose }: Props) {
   const [tab, setTab] = useState<Tab>('info');
+  const openLink = async (url: string) => {
+    await invoke('open_url', { url });
+  };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -93,10 +97,7 @@ export default function AboutModal({ onClose }: Props) {
         <div className="abt-header">
           <div className="abt-header-glow" />
           <div className="abt-icon-wrap">
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#1e1e2e" strokeWidth="2">
-              <path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/>
-              <path d="M12 10v5m-2.5-2.5h5" strokeLinecap="round"/>
-            </svg>
+            <img src="/ruzip_icon.png" alt="RuZip" style={{ width: 44, height: 44, borderRadius: 10 }} />
           </div>
           <div className="abt-header-text">
             <div className="abt-name">RuZip</div>
@@ -125,10 +126,7 @@ export default function AboutModal({ onClose }: Props) {
             <div className="abt-about-wrap">
               <div className="abt-about-hero">
                 <div className="abt-about-icon">
-                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#89b4fa" strokeWidth="1.4">
-                    <path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/>
-                    <path d="M12 10v5m-2.5-2.5h5" strokeLinecap="round"/>
-                  </svg>
+                  <img src="/ruzip_icon.png" alt="RuZip" style={{ width: 48, height: 48, borderRadius: 10 }} />
                 </div>
                 <p className="abt-about-desc">
                   RuZip, Türkiye'de geliştirilen açık kaynaklı bir ZIP arşiv programıdır.
@@ -172,19 +170,39 @@ export default function AboutModal({ onClose }: Props) {
                 </div>
                 <div className="abt-info-cell">
                   <div className="abt-info-label">Yayın Tarihi</div>
-                  <div className="abt-info-val">01 Ocak 2026</div>
+                  <div className="abt-info-val">19 Temmuz 2026</div>
                 </div>
                 <div className="abt-info-cell">
                   <div className="abt-info-label">Geliştirici</div>
                   <div className="abt-info-val">
-                    <a className="abt-link-inline" href="https://github.com/omrfrk8822-code/" target="_blank" rel="noreferrer">omrfrk8822-code</a>
+                    <a
+                      className="abt-link-inline"
+                      href={DEVELOPER_URL}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={e => {
+                        e.preventDefault();
+                        openLink(DEVELOPER_URL);
+                      }}
+                    >
+                      omrfrk8822-code
+                    </a>
                   </div>
                 </div>
               </div>
 
               <div className="abt-section-title">Bağlantılar</div>
               <div className="abt-links">
-                <a className="abt-link-btn" href={GITHUB_URL} target="_blank" rel="noreferrer">
+                <a
+                  className="abt-link-btn"
+                  href={GITHUB_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={e => {
+                    e.preventDefault();
+                    openLink(GITHUB_URL);
+                  }}
+                >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.868-.013-1.703-2.782.604-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836a9.59 9.59 0 012.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/>
                   </svg>
