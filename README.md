@@ -11,6 +11,7 @@
   [![License: MIT](https://img.shields.io/badge/Lisans-MIT-blue.svg)](LICENSE)
   [![Tauri](https://img.shields.io/badge/Tauri-v2-orange.svg)](https://tauri.app)
   [![Rust](https://img.shields.io/badge/Rust-stable-red.svg)](https://www.rust-lang.org)
+  [![Download](https://img.shields.io/badge/İndir-v0.1.0-brightgreen)](https://github.com/omrfrk8822-code/Ruzip/releases/latest/download/RuZip_Setup_0.1.0.exe)
 </div>
 
 ---
