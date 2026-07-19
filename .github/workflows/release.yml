@@ -46,12 +46,14 @@ jobs:
       - name: Build Inno Setup installer
         run: ISCC.exe installer\ruzip_setup.iss
 
-      - name: Upload to Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release create $env:TAG --title "RuZip $env:TAG" --notes "" 2>$null
-          Get-ChildItem src-tauri/target/release/bundle/msi/*.msi, release/RuZip_Setup_*.exe, src-tauri/target/release/RuZip.exe -ErrorAction SilentlyContinue | ForEach-Object { gh release upload $env:TAG $_.FullName --clobber }
+      - uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ env.TAG }}
+          artifacts: "src-tauri/target/release/bundle/msi/*.msi,release/RuZip_Setup_*.exe,src-tauri/target/release/RuZip.exe"
+          allowUpdates: true
+          replacesArtifacts: true
+          generateReleaseNotes: true
+          token: ${{ github.token }}
 
   build-linux:
     runs-on: ubuntu-latest
@@ -79,12 +81,15 @@ jobs:
       - name: Build (Linux x64)
         run: npm run tauri build
 
-      - name: Upload to Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release upload "$TAG" src-tauri/target/release/bundle/appimage/*.AppImage --clobber
-          gh release upload "$TAG" src-tauri/target/release/bundle/deb/*.deb --clobber
+      - uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ env.TAG }}
+          artifacts: "src-tauri/target/release/bundle/appimage/*.AppImage,src-tauri/target/release/bundle/deb/*.deb"
+          allowUpdates: true
+          replacesArtifacts: true
+          omitBodyDuringUpdate: true
+          omitNameDuringUpdate: true
+          token: ${{ github.token }}
 
   build-macos:
     runs-on: macos-latest
@@ -107,8 +112,12 @@ jobs:
       - name: Build (macOS x64)
         run: npm run tauri build
 
-      - name: Upload to Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release upload "$TAG" src-tauri/target/release/bundle/dmg/*.dmg --clobber
+      - uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ env.TAG }}
+          artifacts: "src-tauri/target/release/bundle/dmg/*.dmg"
+          allowUpdates: true
+          replacesArtifacts: true
+          omitBodyDuringUpdate: true
+          omitNameDuringUpdate: true
+          token: ${{ github.token }}
