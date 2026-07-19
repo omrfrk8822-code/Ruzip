@@ -136,13 +136,14 @@ jobs:
           name: macos-assets
           path: assets/macos
 
-      - name: Create Release & Upload
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release create "${{ env.TAG }}" --title "RuZip ${{ env.TAG }}" --notes "" 2>/dev/null || true
-          gh release view "${{ env.TAG }}" --json assets --jq '.assets[].name' 2>/dev/null | while read -r name; do echo "Deleting old: $name"; gh release delete-asset "${{ env.TAG }}" "$name" --yes; done || true
-          find assets -type f | while read -r f; do
-            echo "Uploading $f..."
-            gh release upload "${{ env.TAG }}" "$f"
-          done
+      - name: Create Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "assets/**/*"
+          tag: ${{ env.TAG }}
+          name: "RuZip ${{ env.TAG }}"
+          body: "RuZip ${{ env.TAG }} sürümü yayında! 🎉"
+          allowUpdates: true
+          replacesArtifacts: true
+          omitBodyDuringUpdate: true
+          omitNameDuringUpdate: true
