@@ -155,3 +155,4 @@ jobs:
           replacesArtifacts: true
           omitBodyDuringUpdate: true
           omitNameDuringUpdate: true
+          token: ${{ github.token }}
