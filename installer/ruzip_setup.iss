@@ -31,8 +31,7 @@ WizardResizable=no
 DisableWelcomePage=no
 DisableDirPage=no
 DisableProgramGroupPage=no
-PrivilegesRequired=admin
-PrivilegesRequiredOverridesAllowed=dialog
+PrivilegesRequired=none
 UninstallDisplayIcon={app}\{#AppExeName}
 UninstallDisplayName={#AppName}
 VersionInfoVersion={#AppVersion}
@@ -65,63 +64,55 @@ Name: "{autodesktop}\{#AppName}";    Filename: "{app}\{#AppExeName}"; Tasks: des
 
 [Registry]
 ; ── Dosya tipi tanımı ──────────────────────────────────────────────────────
-Root: HKCR; Subkey: ".zip";                    ValueType: string; ValueName: ""; ValueData: "RuZip.Archive";          Flags: uninsdeletevalue;  Tasks: fileassoc_zip
-Root: HKCR; Subkey: "RuZip.Archive";           ValueType: string; ValueName: ""; ValueData: "ZIP Arşivi";             Flags: uninsdeletekey;    Tasks: fileassoc_zip
-Root: HKCR; Subkey: "RuZip.Archive";           ValueType: string; ValueName: "FriendlyTypeName"; ValueData: "ZIP Arşivi (RuZip)"; Tasks: fileassoc_zip
-Root: HKCR; Subkey: "RuZip.Archive\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#AppExeName},0"; Tasks: fileassoc_zip
-Root: HKCR; Subkey: "RuZip.Archive\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#AppExeName}"" ""%1"""; Tasks: fileassoc_zip
+; ── Dosya tipi tanımı (HKCU — admin gerekmez) ──────────────────────────────
+Root: HKCU; Subkey: "Software\Classes\.zip";                    ValueType: string; ValueName: ""; ValueData: "RuZip.Archive";          Flags: uninsdeletevalue;  Tasks: fileassoc_zip
+Root: HKCU; Subkey: "Software\Classes\RuZip.Archive";           ValueType: string; ValueName: ""; ValueData: "ZIP Arşivi";             Flags: uninsdeletekey;    Tasks: fileassoc_zip
+Root: HKCU; Subkey: "Software\Classes\RuZip.Archive";           ValueType: string; ValueName: "FriendlyTypeName"; ValueData: "ZIP Arşivi (RuZip)"; Tasks: fileassoc_zip
+Root: HKCU; Subkey: "Software\Classes\RuZip.Archive\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#AppExeName},0"; Tasks: fileassoc_zip
+Root: HKCU; Subkey: "Software\Classes\RuZip.Archive\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#AppExeName}"" ""%1"""; Tasks: fileassoc_zip
 
 ; ── Sağ tık: ZIP dosyaları üzerinde ──────────────────────────────────────
-; "RuZip ile Aç"
-Root: HKCR; Subkey: "RuZip.Archive\shell\ruzip_open";         ValueType: string; ValueName: "";     ValueData: "RuZip ile Aç";              Flags: uninsdeletekey; Tasks: shellmenu\open
-Root: HKCR; Subkey: "RuZip.Archive\shell\ruzip_open";         ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#AppExeName},0";     Tasks: shellmenu\open
-Root: HKCR; Subkey: "RuZip.Archive\shell\ruzip_open\command"; ValueType: string; ValueName: "";     ValueData: """{app}\{#AppExeName}"" ""%1"""; Tasks: shellmenu\open
+Root: HKCU; Subkey: "Software\Classes\RuZip.Archive\shell\ruzip_open";         ValueType: string; ValueName: "";     ValueData: "RuZip ile Aç";              Flags: uninsdeletekey; Tasks: shellmenu\open
+Root: HKCU; Subkey: "Software\Classes\RuZip.Archive\shell\ruzip_open";         ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#AppExeName},0";     Tasks: shellmenu\open
+Root: HKCU; Subkey: "Software\Classes\RuZip.Archive\shell\ruzip_open\command"; ValueType: string; ValueName: "";     ValueData: """{app}\{#AppExeName}"" ""%1"""; Tasks: shellmenu\open
 
-; "Buraya çıkar"
-Root: HKCR; Subkey: "RuZip.Archive\shell\ruzip_extract";         ValueType: string; ValueName: "";     ValueData: "Buraya çıkar";              Flags: uninsdeletekey; Tasks: shellmenu\extract
-Root: HKCR; Subkey: "RuZip.Archive\shell\ruzip_extract";         ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#AppExeName},0";     Tasks: shellmenu\extract
-Root: HKCR; Subkey: "RuZip.Archive\shell\ruzip_extract\command"; ValueType: string; ValueName: "";     ValueData: """{app}\{#AppExeName}"" --extract-here ""%1"""; Tasks: shellmenu\extract
+Root: HKCU; Subkey: "Software\Classes\RuZip.Archive\shell\ruzip_extract";         ValueType: string; ValueName: "";     ValueData: "Buraya çıkar";              Flags: uninsdeletekey; Tasks: shellmenu\extract
+Root: HKCU; Subkey: "Software\Classes\RuZip.Archive\shell\ruzip_extract";         ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#AppExeName},0";     Tasks: shellmenu\extract
+Root: HKCU; Subkey: "Software\Classes\RuZip.Archive\shell\ruzip_extract\command"; ValueType: string; ValueName: "";     ValueData: """{app}\{#AppExeName}"" --extract-here ""%1"""; Tasks: shellmenu\extract
 
-; "Klasöre çıkar..."
-Root: HKCR; Subkey: "RuZip.Archive\shell\ruzip_extractto";         ValueType: string; ValueName: "";     ValueData: "Klasöre çıkar...";          Flags: uninsdeletekey; Tasks: shellmenu\extract
-Root: HKCR; Subkey: "RuZip.Archive\shell\ruzip_extractto";         ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#AppExeName},0";     Tasks: shellmenu\extract
-Root: HKCR; Subkey: "RuZip.Archive\shell\ruzip_extractto\command"; ValueType: string; ValueName: "";     ValueData: """{app}\{#AppExeName}"" --extract-to ""%1"""; Tasks: shellmenu\extract
+Root: HKCU; Subkey: "Software\Classes\RuZip.Archive\shell\ruzip_extractto";         ValueType: string; ValueName: "";     ValueData: "Klasöre çıkar...";          Flags: uninsdeletekey; Tasks: shellmenu\extract
+Root: HKCU; Subkey: "Software\Classes\RuZip.Archive\shell\ruzip_extractto";         ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#AppExeName},0";     Tasks: shellmenu\extract
+Root: HKCU; Subkey: "Software\Classes\RuZip.Archive\shell\ruzip_extractto\command"; ValueType: string; ValueName: "";     ValueData: """{app}\{#AppExeName}"" --extract-to ""%1"""; Tasks: shellmenu\extract
 
 ; ── Sağ tık: Herhangi bir dosya üzerinde ────────────────────────────────
-; "RuZip ile Aç" — tüm dosyalar
-Root: HKCR; Subkey: "*\shell\ruzip_open";         ValueType: string; ValueName: "";     ValueData: "RuZip ile Aç";              Flags: uninsdeletekey; Tasks: shellmenu\open
-Root: HKCR; Subkey: "*\shell\ruzip_open";         ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#AppExeName},0";     Tasks: shellmenu\open
-Root: HKCR; Subkey: "*\shell\ruzip_open\command"; ValueType: string; ValueName: "";     ValueData: """{app}\{#AppExeName}"" ""%1"""; Tasks: shellmenu\open
+Root: HKCU; Subkey: "Software\Classes\*\shell\ruzip_open";         ValueType: string; ValueName: "";     ValueData: "RuZip ile Aç";              Flags: uninsdeletekey; Tasks: shellmenu\open
+Root: HKCU; Subkey: "Software\Classes\*\shell\ruzip_open";         ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#AppExeName},0";     Tasks: shellmenu\open
+Root: HKCU; Subkey: "Software\Classes\*\shell\ruzip_open\command"; ValueType: string; ValueName: "";     ValueData: """{app}\{#AppExeName}"" ""%1"""; Tasks: shellmenu\open
 
-; "ZIP arşivine ekle" — dosyalar
-Root: HKCR; Subkey: "*\shell\ruzip_add";         ValueType: string; ValueName: "";     ValueData: "ZIP arşivine ekle (RuZip)"; Flags: uninsdeletekey; Tasks: shellmenu\add
-Root: HKCR; Subkey: "*\shell\ruzip_add";         ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#AppExeName},0";     Tasks: shellmenu\add
-Root: HKCR; Subkey: "*\shell\ruzip_add\command"; ValueType: string; ValueName: "";     ValueData: """{app}\{#AppExeName}"" --add ""%1"""; Tasks: shellmenu\add
+Root: HKCU; Subkey: "Software\Classes\*\shell\ruzip_add";         ValueType: string; ValueName: "";     ValueData: "ZIP arşivine ekle (RuZip)"; Flags: uninsdeletekey; Tasks: shellmenu\add
+Root: HKCU; Subkey: "Software\Classes\*\shell\ruzip_add";         ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#AppExeName},0";     Tasks: shellmenu\add
+Root: HKCU; Subkey: "Software\Classes\*\shell\ruzip_add\command"; ValueType: string; ValueName: "";     ValueData: """{app}\{#AppExeName}"" --add ""%1"""; Tasks: shellmenu\add
 
 ; ── Sağ tık: Klasörler üzerinde ─────────────────────────────────────────
-; "RuZip ile Aç" — klasörler
-Root: HKCR; Subkey: "Directory\shell\ruzip_open";         ValueType: string; ValueName: "";     ValueData: "RuZip ile Aç";              Flags: uninsdeletekey; Tasks: shellmenu\open
-Root: HKCR; Subkey: "Directory\shell\ruzip_open";         ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#AppExeName},0";     Tasks: shellmenu\open
-Root: HKCR; Subkey: "Directory\shell\ruzip_open\command"; ValueType: string; ValueName: "";     ValueData: """{app}\{#AppExeName}"" ""%1"""; Tasks: shellmenu\open
+Root: HKCU; Subkey: "Software\Classes\Directory\shell\ruzip_open";         ValueType: string; ValueName: "";     ValueData: "RuZip ile Aç";              Flags: uninsdeletekey; Tasks: shellmenu\open
+Root: HKCU; Subkey: "Software\Classes\Directory\shell\ruzip_open";         ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#AppExeName},0";     Tasks: shellmenu\open
+Root: HKCU; Subkey: "Software\Classes\Directory\shell\ruzip_open\command"; ValueType: string; ValueName: "";     ValueData: """{app}\{#AppExeName}"" ""%1"""; Tasks: shellmenu\open
 
-; "ZIP arşivine ekle" — klasörler
-Root: HKCR; Subkey: "Directory\shell\ruzip_add";         ValueType: string; ValueName: "";     ValueData: "ZIP arşivine ekle (RuZip)"; Flags: uninsdeletekey; Tasks: shellmenu\add
-Root: HKCR; Subkey: "Directory\shell\ruzip_add";         ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#AppExeName},0";     Tasks: shellmenu\add
-Root: HKCR; Subkey: "Directory\shell\ruzip_add\command"; ValueType: string; ValueName: "";     ValueData: """{app}\{#AppExeName}"" --add ""%1"""; Tasks: shellmenu\add
+Root: HKCU; Subkey: "Software\Classes\Directory\shell\ruzip_add";         ValueType: string; ValueName: "";     ValueData: "ZIP arşivine ekle (RuZip)"; Flags: uninsdeletekey; Tasks: shellmenu\add
+Root: HKCU; Subkey: "Software\Classes\Directory\shell\ruzip_add";         ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#AppExeName},0";     Tasks: shellmenu\add
+Root: HKCU; Subkey: "Software\Classes\Directory\shell\ruzip_add\command"; ValueType: string; ValueName: "";     ValueData: """{app}\{#AppExeName}"" --add ""%1"""; Tasks: shellmenu\add
 
-; "Klasörü zipple"
-Root: HKCR; Subkey: "Directory\shell\ruzip_zip";         ValueType: string; ValueName: "";     ValueData: "RuZip ile Zipple";          Flags: uninsdeletekey; Tasks: shellmenu\add
-Root: HKCR; Subkey: "Directory\shell\ruzip_zip";         ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#AppExeName},0";     Tasks: shellmenu\add
-Root: HKCR; Subkey: "Directory\shell\ruzip_zip\command"; ValueType: string; ValueName: "";     ValueData: """{app}\{#AppExeName}"" --zip-folder ""%1"""; Tasks: shellmenu\add
+Root: HKCU; Subkey: "Software\Classes\Directory\shell\ruzip_zip";         ValueType: string; ValueName: "";     ValueData: "RuZip ile Zipple";          Flags: uninsdeletekey; Tasks: shellmenu\add
+Root: HKCU; Subkey: "Software\Classes\Directory\shell\ruzip_zip";         ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#AppExeName},0";     Tasks: shellmenu\add
+Root: HKCU; Subkey: "Software\Classes\Directory\shell\ruzip_zip\command"; ValueType: string; ValueName: "";     ValueData: """{app}\{#AppExeName}"" --zip-folder ""%1"""; Tasks: shellmenu\add
 
-; "Klasör içeriğini zipple" — boş alan sağ tık
-Root: HKCR; Subkey: "Directory\Background\shell\ruzip_zip";         ValueType: string; ValueName: "";     ValueData: "RuZip ile Zipple";          Flags: uninsdeletekey; Tasks: shellmenu\add
-Root: HKCR; Subkey: "Directory\Background\shell\ruzip_zip";         ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#AppExeName},0";     Tasks: shellmenu\add
-Root: HKCR; Subkey: "Directory\Background\shell\ruzip_zip\command"; ValueType: string; ValueName: "";     ValueData: """{app}\{#AppExeName}"" --zip-folder %V"; Tasks: shellmenu\add
+Root: HKCU; Subkey: "Software\Classes\Directory\Background\shell\ruzip_zip";         ValueType: string; ValueName: "";     ValueData: "RuZip ile Zipple";          Flags: uninsdeletekey; Tasks: shellmenu\add
+Root: HKCU; Subkey: "Software\Classes\Directory\Background\shell\ruzip_zip";         ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#AppExeName},0";     Tasks: shellmenu\add
+Root: HKCU; Subkey: "Software\Classes\Directory\Background\shell\ruzip_zip\command"; ValueType: string; ValueName: "";     ValueData: """{app}\{#AppExeName}"" --zip-folder %V"; Tasks: shellmenu\add
 
 ; ── Uygulama kaydı ────────────────────────────────────────────────────────
-Root: HKLM; Subkey: "Software\{#AppName}"; ValueType: string; ValueName: "InstallPath"; ValueData: "{app}"; Flags: uninsdeletekey
-Root: HKLM; Subkey: "Software\{#AppName}"; ValueType: string; ValueName: "Version";     ValueData: "{#AppVersion}"
+Root: HKCU; Subkey: "Software\RuZip"; ValueType: string; ValueName: "InstallPath"; ValueData: "{app}"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\RuZip"; ValueType: string; ValueName: "Version";     ValueData: "{#AppVersion}"
 
 [Run]
 Filename: "{app}\{#AppExeName}"; Description: "{#AppName}'ı başlat"; Flags: nowait postinstall skipifsilent
