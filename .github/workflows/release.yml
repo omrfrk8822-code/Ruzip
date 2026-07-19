@@ -2,9 +2,18 @@ name: Build & Release
 
 on:
   workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release tag (örn. v0.1.0)'
+        required: false
+        default: 'v0.1.0'
+        type: string
   push:
     tags:
       - 'v*'
+
+env:
+  TAG: ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag_name }}
 
 jobs:
   build-windows:
@@ -40,6 +49,7 @@ jobs:
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ env.TAG }}
           files: |
             src-tauri/target/release/bundle/msi/*.msi
             release/RuZip_Setup_*.exe
@@ -76,6 +86,7 @@ jobs:
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ env.TAG }}
           files: |
             src-tauri/target/release/bundle/appimage/*.AppImage
             src-tauri/target/release/bundle/deb/*.deb
@@ -105,6 +116,7 @@ jobs:
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ env.TAG }}
           files: |
             src-tauri/target/release/bundle/dmg/*.dmg
           fail_on_unmatched_files: false
