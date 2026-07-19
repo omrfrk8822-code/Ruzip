@@ -23,6 +23,8 @@
 | 🐧 Linux | [RuZip_0.1.0_amd64.AppImage](https://github.com/omrfrk8822-code/Ruzip/releases/download/v0.1.0/RuZip_0.1.0_amd64.AppImage) |
 | 🍎 macOS | [RuZip_0.1.0_aarch64.dmg](https://github.com/omrfrk8822-code/Ruzip/releases/download/v0.1.0/RuZip_0.1.0_aarch64.dmg) |
 
+> ⚠️ **Windows Güvenlik Uyarısı:** İmzasız bir uygulama olduğu için Windows "Windows cihazını korudu" uyarısı gösterebilir. **"Yine de çalıştır"** butonuna tıklayarak güvenle kullanabilirsiniz. Açık kaynak kodlu olduğu için güvenlidir — dilerseniz [kaynak kodunu](https://github.com/omrfrk8822-code/Ruzip) inceleyip derleyebilirsiniz.
+
 Tüm sürümler ve dosyalar için [Releases sayfası](https://github.com/omrfrk8822-code/Ruzip/releases).
 
 ---
