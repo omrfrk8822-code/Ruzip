@@ -606,6 +606,41 @@ body {
 .abt-cl-group-label.fixed { color: #f9e2af; }
 .abt-cl-list { padding-left: 16px; display: flex; flex-direction: column; gap: 4px; margin-top: 2px; }
 .abt-cl-list li { font-size: 12px; color: #a6adc8; line-height: 1.65; }
+.abt-cl-loading { font-size: 12px; color: #585b70; text-align: center; padding: 16px 0; }
+.abt-cl-sep {
+  text-align: center; font-size: 11px; font-weight: 700; color: #585b70;
+  letter-spacing: 1.5px; position: relative; padding: 8px 0;
+}
+.abt-cl-sep::before, .abt-cl-sep::after {
+  content: ''; display: inline-block; width: 40px; height: 1px;
+  background: #313244; vertical-align: middle; margin: 0 12px;
+}
+.abt-cl-api-body {
+  font-size: 12px; color: #a6adc8; line-height: 1.65;
+}
+
+/* ── Güncelleme Kontrolü ── */
+.abt-update { display: flex; flex-direction: column; gap: 10px; }
+.abt-update .btn { align-self: flex-start; display: flex; align-items: center; gap: 8px; }
+.abt-upd-result {
+  padding: 10px 14px; border-radius: 8px; font-size: 13px;
+  display: flex; align-items: center; gap: 12px;
+}
+.abt-upd-result.latest { background: rgba(166,227,161,0.1); border: 1px solid rgba(166,227,161,0.2); color: #a6e3a1; }
+.abt-upd-result.outdated { background: rgba(243,139,168,0.1); border: 1px solid rgba(243,139,168,0.25); color: #f38ba8; }
+.abt-upd-result.error { background: rgba(243,139,168,0.08); border: 1px solid rgba(243,139,168,0.15); color: #f38ba8; }
+.abt-upd-link {
+  font-weight: 700; cursor: pointer; text-decoration: none;
+  padding: 4px 12px; border-radius: 6px; font-size: 12px;
+  background: rgba(137,180,250,0.15); color: #89b4fa; border: 1px solid rgba(137,180,250,0.3);
+}
+.abt-upd-link:hover { background: rgba(137,180,250,0.25); }
+.abt-spinner {
+  display: inline-block; width: 14px; height: 14px;
+  border: 2px solid rgba(137,180,250,0.3); border-top-color: #89b4fa;
+  border-radius: 50%; animation: abt-spin 0.6s linear infinite;
+}
+@keyframes abt-spin { to { transform: rotate(360deg); } }
 
 /* ── Lisans ── */
 .abt-license { display: flex; flex-direction: column; gap: 14px; }

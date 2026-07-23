@@ -3,7 +3,7 @@
 ; Multi-arch: x64 ve ARM64 desteği
 
 #define AppName "RuZip"
-#define AppVersion "0.1.4"
+#define AppVersion "0.1.5"
 #define AppPublisher "RuZip"
 #define AppURL "https://github.com/omrfrk8822-code/Ruzip"
 #define AppExeName "RuZip.exe"

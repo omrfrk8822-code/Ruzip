@@ -7,7 +7,7 @@ on:
       tag:
         description: 'Release tag (örn. v0.1.4)'
         required: true
-        default: 'v0.1.4'
+        default: 'v0.1.5'
         type: string
   # Gelecekte tag push ile otomatik tetikleme (ruleset izin verirse)
   push:

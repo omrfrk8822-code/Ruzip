@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 
-export const APP_VERSION = '0.1.4';
-export const APP_BUILD = '20260719';
+export const APP_VERSION = '0.1.5';
+export const APP_BUILD = '20260723';
 export const GITHUB_URL = 'https://github.com/omrfrk8822-code/Ruzip';
 export const DEVELOPER_URL = 'https://github.com/oemerfarukozturk';
 
@@ -16,6 +16,15 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.1.5',
+    date: '23 Temmuz 2026',
+    type: 'patch',
+    changed: [
+      'Güncelleme kontrolü artık Hakkında penceresinden de yapılabiliyor',
+      'Geçmiş sürüm notları GitHub API üzerinden canlı olarak gösteriliyor',
+    ],
+  },
   {
     version: '0.1.4',
     date: '23 Temmuz 2026',
@@ -116,9 +125,48 @@ interface Props { onClose: () => void; }
 
 export default function AboutModal({ onClose }: Props) {
   const [tab, setTab] = useState<Tab>('info');
+  const [upd, setUpd] = useState<{ checking: boolean; data: { tag: string; url: string; body: string } | null; err: boolean }>({ checking: false, data: null, err: false });
+  const [releases, setReleases] = useState<{ tag: string; name: string; body: string }[] | null>(null);
+  const [loadingReleases, setLoadingReleases] = useState(false);
+
   const openLink = async (url: string) => {
     await invoke('open_url', { url });
   };
+
+  const checkUpdate = async () => {
+    setUpd({ checking: true, data: null, err: false });
+    try {
+      const res = await fetch('https://api.github.com/repos/omrfrk8822-code/Ruzip/releases/latest');
+      const json = await res.json();
+      setUpd({ checking: false, data: { tag: (json.tag_name || '').replace(/^v/, ''), url: json.html_url || '', body: json.body || '' }, err: false });
+    } catch {
+      setUpd({ checking: false, data: null, err: true });
+    }
+  };
+
+  const fetchReleases = async () => {
+    if (releases !== null || loadingReleases) return;
+    setLoadingReleases(true);
+    try {
+      const res = await fetch('https://api.github.com/repos/omrfrk8822-code/Ruzip/releases?per_page=20');
+      const json = await res.json();
+      if (Array.isArray(json)) {
+        setReleases(json.map((r: any) => ({
+          tag: (r.tag_name || '').replace(/^v/, ''),
+          name: r.name || r.tag_name || '',
+          body: r.body || '',
+        })));
+      }
+    } catch { /* ignore */ }
+    setLoadingReleases(false);
+  };
+
+  const updateBtnLabel = upd.checking ? 'Kontrol ediliyor...' : upd.data ? 'Tekrar Kontrol Et' : 'Güncellemeleri Kontrol Et';
+
+  // changelog sekmesi açılınca API'den release'leri çek
+  useEffect(() => {
+    if (tab === 'changelog') fetchReleases();
+  }, [tab]);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -208,7 +256,7 @@ export default function AboutModal({ onClose }: Props) {
                 </div>
                 <div className="abt-info-cell">
                   <div className="abt-info-label">Yayın Tarihi</div>
-                  <div className="abt-info-val">19 Temmuz 2026</div>
+                  <div className="abt-info-val">23 Temmuz 2026</div>
                 </div>
                 <div className="abt-info-cell">
                   <div className="abt-info-label">Geliştirici</div>
@@ -247,12 +295,50 @@ export default function AboutModal({ onClose }: Props) {
                   GitHub'da İncele
                 </a>
               </div>
+
+              <div className="abt-section-title">Güncellemeler</div>
+              <div className="abt-update">
+                <button className="btn btn-secondary" onClick={checkUpdate} disabled={upd.checking}>
+                  {upd.checking && <span className="abt-spinner" />}
+                  {updateBtnLabel}
+                </button>
+                {upd.data && (() => {
+                  const d = upd.data;
+                  return (
+                    <div className={`abt-upd-result ${d.tag > APP_VERSION ? 'outdated' : 'latest'}`}>
+                      {d.tag > APP_VERSION ? (
+                        <>
+                          <strong>Yeni sürüm v{d.tag} mevcut!</strong>
+                          <a className="abt-upd-link" href={d.url} target="_blank" rel="noreferrer"
+                            onClick={e => { e.preventDefault(); openLink(d.url); }}>
+                            İndir
+                          </a>
+                        </>
+                      ) : (
+                        <strong>En son sürümü kullanıyorsunuz.</strong>
+                      )}
+                    </div>
+                  );
+                })()}
+                {upd.err && <div className="abt-upd-result error">Kontrol başarısız. İnternet bağlantınızı kontrol edin.</div>}
+              </div>
             </>
           )}
 
           {/* ── DEĞİŞİKLİKLER ── */}
           {tab === 'changelog' && (
             <div className="abt-changelog">
+              {loadingReleases && <div className="abt-cl-loading">Yükleniyor...</div>}
+              {releases && releases.map(r => (
+                <div key={r.tag} className="abt-cl-entry">
+                  <div className="abt-cl-head">
+                    <span className="abt-cl-ver">v{r.tag}</span>
+                    <span className="abt-cl-type" style={{ color: '#89b4fa', borderColor: '#89b4fa55', background: '#89b4fa18' }}>API</span>
+                  </div>
+                  <div className="abt-cl-api-body" dangerouslySetInnerHTML={{ __html: r.body.replace(/\n/g, '<br>') }} />
+                </div>
+              ))}
+              {releases && <div className="abt-cl-sep">Geçmiş Sürümler</div>}
               {CHANGELOG.map(entry => (
                 <div key={entry.version} className="abt-cl-entry">
                   <div className="abt-cl-head">
