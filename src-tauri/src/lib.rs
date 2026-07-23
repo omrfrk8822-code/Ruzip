@@ -3,6 +3,7 @@ mod commands;
 use commands::*;
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
+use tauri::Emitter;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -10,6 +11,21 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
+            for arg in argv {
+                if arg.to_lowercase().ends_with(".zip") {
+                    let _ = app.emit("open-file", arg.clone());
+                }
+            }
+        }))
+        .setup(|app| {
+            for arg in std::env::args().skip(1) {
+                if arg.to_lowercase().ends_with(".zip") {
+                    let _ = app.emit("open-file", arg);
+                }
+            }
+            Ok(())
+        })
         .manage(CancelFlag(Arc::new(AtomicBool::new(false))))
         .invoke_handler(tauri::generate_handler![
             list_zip,

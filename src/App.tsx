@@ -8,7 +8,7 @@ import Toolbar from './components/Toolbar';
 import FileList, { ZipEntry } from './components/FileList';
 import StatusBar from './components/StatusBar';
 import Dialog from './components/Dialog';
-import AboutModal from './components/AboutModal';
+import AboutModal, { APP_VERSION } from './components/AboutModal';
 
 interface ZipInfo { entries: ZipEntry[]; total_size: number; total_compressed: number; }
 interface ContextMenuState { x: number; y: number; }
@@ -45,6 +45,7 @@ export default function App() {
   const [progress, setProgress] = useState<ProgressEvt | null>(null);
   const [testResult, setTestResult] = useState<TestResult | null>(null);
   const [showAbout, setShowAbout] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState<{ latest: string; url: string } | null>(null);
 
   const showStatus = (msg: string) => { setStatus(msg); setTimeout(() => setStatus(''), 3000); };
 
@@ -118,6 +119,32 @@ export default function App() {
     }).then(fn => { unlisten = fn; });
     return () => { unlisten?.(); };
   }, [loadArchive]);
+
+  // "open-file" event — file association (RuZip ile Aç)
+  useEffect(() => {
+    const unlisten = listen<string>('open-file', e => {
+      loadArchive(e.payload);
+    });
+    return () => { unlisten.then(fn => fn()); };
+  }, [loadArchive]);
+
+  // Otomatik güncelleme kontrolü
+  useEffect(() => {
+    let cancelled = false;
+    const check = async () => {
+      try {
+        const res = await fetch('https://api.github.com/repos/omrfrk8822-code/Ruzip/releases/latest');
+        const data = await res.json();
+        if (cancelled) return;
+        const latestTag = (data.tag_name || '').replace(/^v/, '');
+        if (latestTag && latestTag > APP_VERSION) {
+          setUpdateInfo({ latest: latestTag, url: data.html_url || `https://github.com/omrfrk8822-code/Ruzip/releases/tag/v${latestTag}` });
+        }
+      } catch { /* ignore */ }
+    };
+    check();
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     const blockKeys = (e: KeyboardEvent) => {
@@ -456,6 +483,17 @@ export default function App() {
         <span className="addressbar-label">Konum:</span>
         <div className="addressbar-path">{archivePath ? breadcrumb : 'Arşiv açılmadı'}</div>
       </div>
+
+      {updateInfo && (
+        <div className="update-banner">
+          <span>Yeni sürüm v{updateInfo.latest} mevcut</span>
+          <a className="update-banner-link" href={updateInfo.url} target="_blank" rel="noreferrer"
+            onClick={e => { e.preventDefault(); invoke('open_url', { url: updateInfo.url }); }}>
+            İndir
+          </a>
+          <button className="update-banner-close" onClick={() => setUpdateInfo(null)}>✕</button>
+        </div>
+      )}
 
       {archivePath ? (
         <FileList

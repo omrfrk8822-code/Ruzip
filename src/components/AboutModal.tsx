@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 
-export const APP_VERSION = '0.1.3';
+export const APP_VERSION = '0.1.4';
 export const APP_BUILD = '20260719';
 export const GITHUB_URL = 'https://github.com/omrfrk8822-code/Ruzip';
 export const DEVELOPER_URL = 'https://github.com/oemerfarukozturk';
@@ -16,6 +16,18 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.1.4',
+    date: '23 Temmuz 2026',
+    type: 'patch',
+    added: [
+      'Otomatik güncelleme kontrolü: yeni sürüm varsa bildirim gösterilir',
+    ],
+    fixed: [
+      '"RuZip ile Aç" ile ZIP dosyası açılamıyordu (.zip dosyasına tıklayınca boş ekran geliyordu)',
+      'Kes/Yapıştır farklı klasörler arasında çalışmıyordu (isim çakışması hatası düzeltildi)',
+    ],
+  },
   {
     version: '0.1.3',
     date: '19 Temmuz 2026',

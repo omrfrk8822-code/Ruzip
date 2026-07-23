@@ -72,21 +72,35 @@ pub async fn move_in_zip(zip_path: String, src_path: String, dest_folder: String
             let src = File::open(&zip_path).map_err(|e| e.to_string())?;
             let mut src_archive = ZipArchive::new(src).map_err(|e| e.to_string())?;
 
-            let src_base = src_path.trim_end_matches('/');
-            let file_name = src_base.rsplit('/').next().unwrap_or(src_base);
-            let new_base = if dest_folder.is_empty() {
-                file_name.to_string()
+            let src_base = src_path.replace('\\', "/").trim_end_matches('/').to_string();
+            let dest_folder = dest_folder.replace('\\', "/").trim_end_matches('/').to_string();
+            let file_name = src_base.rsplit('/').next().unwrap_or(&src_base).to_string();
+            let target_base = if dest_folder.is_empty() {
+                file_name.clone()
             } else {
-                format!("{}/{}", dest_folder.trim_end_matches('/'), file_name)
+                format!("{}/{}", dest_folder, file_name)
             };
 
-            // Çakışma kontrolü (kendisi hariç)
+            // Çakışma kontrolü — otomatik çözüm
             let names = collect_names(&mut src_archive)?;
-            for name in &names {
-                let check = name.trim_end_matches('/');
-                if check == new_base.trim_end_matches('/') && check != src_base {
-                    return Err(format!("CONFLICT:{}", file_name));
+            let mut final_base = target_base.clone();
+            let mut counter = 1;
+            loop {
+                let conflicted = names.iter().any(|n| {
+                    let check = n.trim_end_matches('/');
+                    check == final_base.trim_end_matches('/') && check != src_base
+                });
+                if !conflicted { break; }
+                let stem = target_base.trim_end_matches('/');
+                let ext = file_name.rsplit('.').next().unwrap_or("");
+                if ext == file_name {
+                    final_base = format!("{}_{}", stem, counter);
+                } else {
+                    let base = &file_name[..file_name.len() - ext.len() - 1];
+                    let parent = stem.strip_suffix(&file_name).unwrap_or("");
+                    final_base = format!("{}{}_{}.{}", parent, base, counter, ext);
                 }
+                counter += 1;
             }
 
             let dst = File::create(&tmp_path).map_err(|e| e.to_string())?;
@@ -94,10 +108,10 @@ pub async fn move_in_zip(zip_path: String, src_path: String, dest_folder: String
 
             for (i, name) in names.iter().enumerate() {
                 let new_name = if name.trim_end_matches('/') == src_base {
-                    if name.ends_with('/') { format!("{}/", new_base) } else { new_base.clone() }
+                    if name.ends_with('/') { format!("{}/", final_base) } else { final_base.clone() }
                 } else if name.starts_with(&format!("{}/", src_base)) {
                     let rest = &name[src_base.len()..];
-                    format!("{}{}", new_base, rest)
+                    format!("{}{}", final_base, rest)
                 } else {
                     let raw = src_archive.by_index_raw(i).map_err(|e| e.to_string())?;
                     dst_zip.raw_copy_file(raw).map_err(|e| e.to_string())?;
@@ -130,23 +144,40 @@ pub async fn copy_in_zip(zip_path: String, src_path: String, dest_folder: String
             let src = File::open(&zip_path).map_err(|e| e.to_string())?;
             let mut src_archive = ZipArchive::new(src).map_err(|e| e.to_string())?;
 
-            let src_base = src_path.trim_end_matches('/');
-            let file_name = src_base.rsplit('/').next().unwrap_or(src_base);
-            let new_base = if dest_folder.is_empty() {
+            let src_base = src_path.replace('\\', "/").trim_end_matches('/').to_string();
+            let dest_folder = dest_folder.replace('\\', "/").trim_end_matches('/').to_string();
+            let file_name = src_base.rsplit('/').next().unwrap_or(&src_base).to_string();
+            let same_folder = src_base == dest_folder
+                || src_base == format!("{}/{}", dest_folder, src_base.rsplit('/').next().unwrap_or(""));
+
+            let target_base = if same_folder {
                 format!("{}_kopya", file_name)
+            } else if dest_folder.is_empty() {
+                file_name.clone()
             } else {
-                format!("{}/{}", dest_folder.trim_end_matches('/'), file_name)
+                format!("{}/{}", dest_folder, file_name)
             };
 
-            // Farklı dizine kopyalanıyorsa çakışma kontrolü
-            if !dest_folder.is_empty() {
-                let names = collect_names(&mut src_archive)?;
-                for name in &names {
-                    let check = name.trim_end_matches('/');
-                    if check == new_base.trim_end_matches('/') && check != src_base {
-                        return Err(format!("CONFLICT:{}", file_name));
-                    }
+            // Çakışma kontrolü — otomatik çözüm
+            let names = collect_names(&mut src_archive)?;
+            let mut final_base = target_base.clone();
+            let mut counter = 1;
+            loop {
+                let conflicted = names.iter().any(|n| {
+                    let check = n.trim_end_matches('/');
+                    check == final_base.trim_end_matches('/')
+                });
+                if !conflicted { break; }
+                let stem = target_base.trim_end_matches('/');
+                let ext = file_name.rsplit('.').next().unwrap_or("");
+                if ext == file_name {
+                    final_base = format!("{}_{}", stem, counter);
+                } else {
+                    let base = &file_name[..file_name.len() - ext.len() - 1];
+                    let parent = stem.strip_suffix(&file_name).unwrap_or("");
+                    final_base = format!("{}{}_{}.{}", parent, base, counter, ext);
                 }
+                counter += 1;
             }
 
             let dst = File::create(&tmp_path).map_err(|e| e.to_string())?;
@@ -163,10 +194,10 @@ pub async fn copy_in_zip(zip_path: String, src_path: String, dest_folder: String
                 let name = src_archive.by_index_raw(i).map_err(|e| e.to_string())?.name().to_string();
 
                 let new_name = if name.trim_end_matches('/') == src_base {
-                    if name.ends_with('/') { format!("{}/", new_base) } else { new_base.clone() }
+                    if name.ends_with('/') { format!("{}/", final_base) } else { final_base.clone() }
                 } else if name.starts_with(&format!("{}/", src_base)) {
                     let rest = &name[src_base.len()..];
-                    format!("{}{}", new_base, rest)
+                    format!("{}{}", final_base, rest)
                 } else {
                     continue;
                 };

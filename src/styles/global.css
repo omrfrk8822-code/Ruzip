@@ -97,12 +97,41 @@ body {
   border-radius: 3px;
   padding: 3px 8px;
   color: var(--text);
-  font-size: 12px;
-  font-family: 'Consolas', monospace;
+
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 12px;
 }
+
+/* Güncelleme bildirimi */
+.update-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(243,139,168,0.12);
+  border-bottom: 1px solid rgba(243,139,168,0.25);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.update-banner-link {
+  color: #89b4fa;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+.update-banner-link:hover { text-decoration: underline; }
+.update-banner-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--text2);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 4px;
+}
+.update-banner-close:hover { color: var(--text); }
 
 .filelist-container {
   flex: 1;
