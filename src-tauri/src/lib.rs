@@ -3,10 +3,20 @@ mod commands;
 use commands::*;
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
+use std::sync::Mutex;
 use tauri::Emitter;
+
+struct PendingFile(Arc<Mutex<Option<String>>>);
+
+#[tauri::command]
+fn take_pending_file(state: tauri::State<'_, PendingFile>) -> Option<String> {
+    state.0.lock().unwrap().take()
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let pending = Arc::new(Mutex::new(std::env::args().skip(1).find(|a| a.to_lowercase().ends_with(".zip"))));
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
@@ -18,14 +28,7 @@ pub fn run() {
                 }
             }
         }))
-        .setup(|app| {
-            for arg in std::env::args().skip(1) {
-                if arg.to_lowercase().ends_with(".zip") {
-                    let _ = app.emit("open-file", arg);
-                }
-            }
-            Ok(())
-        })
+        .manage(PendingFile(pending))
         .manage(CancelFlag(Arc::new(AtomicBool::new(false))))
         .invoke_handler(tauri::generate_handler![
             list_zip,
@@ -43,6 +46,7 @@ pub fn run() {
             open_file,
             open_url,
             cancel_operation,
+            take_pending_file,
         ])
         .run(tauri::generate_context!())
         .expect("error while running ruzip");

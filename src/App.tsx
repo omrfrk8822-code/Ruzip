@@ -92,6 +92,13 @@ export default function App() {
     }
   }, []);
 
+  // İlk açılışta komut satırı argümanından .zip yolunu al
+  useEffect(() => {
+    invoke<string | null>('take_pending_file').then(path => {
+      if (path) loadArchive(path);
+    });
+  }, [loadArchive]);
+
   useEffect(() => {
     const unlisten = listen<ProgressEvt>('progress', e => {
       const p = e.payload;
